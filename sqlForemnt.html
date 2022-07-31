@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sql转换</title>
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      // 转换
+      $("#btn-conversion").click(function () {
+        var value = $("#sqlInput").val();
+        var valData = value.toString().substring(0, value.lastIndexOf(',')).split(",")
+        valData = valData.filter((item) => item != '').map((item, index) => {
+          itemList = item.replace(/(^\s*)|(\s*$)/g, "")
+          var thePrefix = strToCam(itemList.match(/(?<=\`).+?(?=\`)/)?.[0])
+          var type = itemList.match(/(?<=`\s).*?(?=\()/gi)
+          var isNull = itemList.indexOf('NOT NULL')
+          var theDefaultValue = itemList.match(/(?<=DEFAULT \').+?(?=\')/)?.[0]
+          var describe = itemList.match(/(?<=COMMENT \').+(?=\')/)?.[0]
+          if (type === 'bigint' | 'int' | 'tinyint') type = 'number'
+          else type = 'string'
+          return `${thePrefix}?: ${type};  // ${describe} ${isNull !== -1 ? '必填' : ''} 默认为：${theDefaultValue} `
+        })
+        $('#showSql').val(valData.join('\n').replace(/,/g, ""))
+      });
+      var time = null
+      // 复制
+      $("#btn-copy").click(function () {
+        $("#showSql").select()
+        var done = document.execCommand('Copy')
+        if (done) {
+          if (!$('#lhw-alert-box').hasClass("alert-hide") || time !== null) {
+            $('#lhw-alert-box').removeClass();
+            clearTimeout(time);
+            setTimeout(() => {
+              $('#lhw-alert-box').attr("class", "alert-show")
+              time = setTimeout(function () {
+                $('#lhw-alert-box').removeClass("alert-show");
+                $('#lhw-alert-box').attr("class", "alert-hide")
+                clearTimeout();
+              }, 3000);
+            }, 100);
+          } else {
+            $('#lhw-alert-box').attr("class", "alert-show")
+            time = setTimeout(function () {
+              $('#lhw-alert-box').removeClass("alert-show");
+              $('#lhw-alert-box').attr("class", "alert-hide")
+              clearTimeout();
+            }, 3000);
+          }
+        }
+      });
+      // 关闭弹框
+      $(".delete").click(function () {
+        clearTimeout(time);
+        $('#lhw-alert-box').attr("class", "alert-hide")
+      });
+      // 清空
+      $("#btn-clear").click(function () {
+        $('#showSql').val('')
+        $("#sqlInput").val('')
+      });
+      // 测试
+      $("#btn-test").click(function () {
+        $('#sqlInput').val(`
+        \`id\` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+        \`company_id\` bigint(20) NOT NULL COMMENT '客户公司编码',
+        \`bill_no\` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '单据号',
+        \`contract_status\` tinyint(4) NOT NULL DEFAULT '10' COMMENT '合同状态(10=正常 20=已过期 30=提前中止)',
+        \`display_type\` tinyint(4) NOT NULL DEFAULT '0' COMMENT '显示品牌/品类控制字段(0=品牌 1=品类)',
+        \`supplier_no\` varchar(20) NOT NULL COMMENT '供应商编号',
+        \`settlement_method\` tinyint(4) NOT NULL COMMENT '结算方式 1=半月结 2=月结 3=季结 ',
+        \`currency\` tinyint(4) NOT NULL COMMENT '币种(1=人民币 2=港币 3=美元)',
+        \`effective_date\` date NOT NULL COMMENT '生效日期',
+        \`status\` varchar(20) NOT NULL DEFAULT '10' COMMENT '状态(10=正常 20=审核)',
+        \`remarks\` varchar(100) DEFAULT NULL COMMENT '备注',
+        \`creator\` varchar(20) NOT NULL COMMENT '创建人',
+        \`create_time\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间(不可人为调整)',
+        \`modifier\` varchar(20) DEFAULT NULL COMMENT '修改人',
+        \`modify_time\` datetime DEFAULT NULL COMMENT '修改时间',
+        \`update_time\` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+        \`del_tag\` varchar(2) DEFAULT '0' COMMENT '归档删除标识(0=正常归档，删除后数据同步下游 1=归档删除，删除后数据不同步下游',
+        \`partion_no\` varchar(20) NOT NULL COMMENT '分库特征码',
+        `)
+        $("#showSql").val('')
+      });
+    });
+
+    // 转驼峰
+    function strToCam(str) {
+      const arr = str.split('_')
+      for (var i = 1; i < arr.length; i++) {
+        arr[i] = arr[i].charAt(0).toUpperCase() + arr[i].substr(1, arr[i].length - 1)
+      }
+      return arr.join('')
+    }
+  </script>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      outline: none;
+      resize: none;
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+    }
+
+    .siderNav::-webkit-scrollbar,
+    html::-webkit-scrollbar,
+    div::-webkit-scrollbar,
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .siderNav::-webkit-scrollbar-thumb,
+    html::-webkit-scrollbar-thumb,
+    div::-webkit-scrollbar-thumb,
+    *::-webkit-scrollbar-thumb {
+      background-color: #d4d3d3bb;
+      border-radius: 1em;
+    }
+
+    .siderNav::-webkit-scrollbar-track,
+    html::-webkit-scrollbar-track,
+    div::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-track {
+      background-color: #ffffffbd;
+      border-radius: 1em;
+    }
+
+    body {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    ::placeholder {
+      color: #C0C4CC;
+    }
+
+    #lhw-body-box {
+      width: 80%;
+      height: 80%;
+      padding: 24px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1)
+    }
+
+    .lhw-top-box,
+    .lhw-bottom-box {
+      height: 50%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #sqlInput,
+    #showSql {
+      height: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: #ddd 1px solid;
+      transition: all 0.30s ease-in-out;
+    }
+
+    #sqlInput:hover {
+      border: #409EFF 1px solid;
+    }
+
+    #showSql:hover {
+      cursor: pointer;
+    }
+
+    #btn-conversion,
+    #btn-copy,
+    #btn-test,
+    #btn-clear {
+      font-size: 15px;
+      font-family: Arial;
+      font-weight: 500;
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
+      white-space: nowrap;
+      border: #0000 solid 1px;
+      border-radius: 4px;
+      padding: 12px 20px;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: #67c23a;
+    }
+
+    .btn-primary:hover {
+      background: #85ce61;
+    }
+
+    .btn-info {
+      color: #606266;
+      background-color: #fff;
+      border: #dcdfe6 solid 1px !important;
+    }
+
+    .btn-info:hover {
+      border: #409eff solid 1px !important;
+      background-color: #ecf5ff;
+      color: #409eff;
+    }
+
+    #lhw-alert-box {
+      position: absolute;
+      top: 3%;
+      min-width: 380px;
+      background-color: #f0f9eb;
+      color: #67c23a;
+      padding: 15px 15px 15px 20px;
+      border-radius: 4px;
+      overflow: hidden;
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: opacity .2s;
+      box-shadow: 0 6px 16px -8px #00000014, 0 9px 28px #0000000d, 0 12px 48px 16px #00000008;
+    }
+
+    #lhw-alert-box div {
+      display: flex;
+      align-items: center;
+    }
+
+    #lhw-alert-box div span {
+      margin-right: 10px;
+    }
+
+    #lhw-alert-box span {
+      display: flex;
+      align-items: center;
+    }
+
+    #lhw-alert-box .delete {
+      color: #c0c4cc;
+      cursor: pointer;
+    }
+
+    #lhw-alert-box .delete:hover {
+      color: #a5a8af;
+    }
+
+    .alert-show {
+      animation: scale-up-top 0.3s ease-in-out both;
+    }
+
+    .alert-hide {
+      animation: scale-out-top 0.3s ease-in-out both;
+    }
+
+    @keyframes scale-up-top {
+      0% {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0px)
+      }
+    }
+
+    @keyframes scale-out-top {
+      0% {
+        opacity: 1;
+        transform: translateY(0px)
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id='lhw-body-box'>
+    <div class="lhw-top-box">
+      <textarea id="sqlInput" autocomplete='off' placeholder="请输入SQL"></textarea>
+      <div class="tools-btn">
+        <button id="btn-conversion" class="btn-primary">转换</button>
+        <button id="btn-clear" class="btn-info">清空</button>
+        <button id="btn-test" class="btn-info">测试用例</button>
+        <button id="btn-copy" class="btn-info">复制结果</button>
+      </div>
+    </div>
+    <div class="lhw-bottom-box">
+      <textarea type="text" id="showSql" autocomplete='off' placeholder="转换后的SQL" readonly></textarea>
+    </div>
+  </div>
+
+  <div id="lhw-alert-box">
+    <div>
+      <span>
+        <svg viewBox="64 64 896 896" focusable="false" data-icon="check-circle" width="1em" height="1em"
+          fill="currentColor" aria-hidden="true">
+          <path
+            d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm193.5 301.7l-210.6 292a31.8 31.8 0 01-51.7 0L318.5 484.9c-3.8-5.3 0-12.7 6.5-12.7h46.9c10.2 0 19.9 4.9 25.9 13.3l71.2 98.8 157.2-218c6-8.3 15.6-13.3 25.9-13.3H699c6.5 0 10.3 7.4 6.5 12.7z">
+          </path>
+        </svg>
+      </span>
+      <span>复制成功</span>
+    </div>
+    <span class="delete">
+      <svg viewBox="64 64 896 896" focusable="false" data-icon="close" width="1em" height="1em" fill="currentColor"
+        aria-hidden="true">
+        <path
+          d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 00203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z">
+        </path>
+      </svg>
+    </span>
+  </div>
+</body>
+
+</html>
