@@ -17,13 +17,13 @@
         valData = valData.filter((item) => item != '').map((item, index) => {
           itemList = item.replace(/(^\s*)|(\s*$)/g, "")
           var thePrefix = strToCam(itemList.match(/(?<=\`).+?(?=\`)/)?.[0])
-          var type = itemList.match(/(?<=`\s).*?(?=\()/gi)
+          var type = itemList.match(/(?<=`\s).*?(?=\()/gi)?.[0] || ''
           var isNull = itemList.indexOf('NOT NULL')
           var theDefaultValue = itemList.match(/(?<=DEFAULT \').+?(?=\')/)?.[0]
           var describe = itemList.match(/(?<=COMMENT \').+(?=\')/)?.[0]
-          if (type === 'bigint' | 'int' | 'tinyint') type = 'number'
-          else type = 'string'
-          return `${thePrefix}?: ${type};  // ${describe} ${isNull !== -1 ? '必填' : ''} 默认为：${theDefaultValue} `
+          console.log('type', type);
+          ['bigint', 'int', 'tinyint'].includes(type) ? type = 'number' : type = 'string'
+          return `${thePrefix}?: ${type};  // ${describe} ${isNull !== -1 ? '【必填】' : ''} ${theDefaultValue === undefined ? '' : '【默认为：' + theDefaultValue + '】'} `
         })
         $('#showSql').val(valData.join('\n').replace(/,/g, ""))
       });
