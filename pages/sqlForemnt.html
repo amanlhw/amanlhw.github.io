@@ -13,15 +13,22 @@
       // 转换
       $("#btn-conversion").click(function () {
         var value = $("#sqlInput").val();
-        var valData = value.toString().substring(0, value.lastIndexOf(',')).split(",")
+        var valData = value.toString().substring(0, value.lastIndexOf(',')).split("',")
+        console.log('value', value, valData);
         valData = valData.filter((item) => item != '').map((item, index) => {
-          itemList = item.replace(/(^\s*)|(\s*$)/g, "")
+          console.log('原始值：', item);
+          itemList = item.replace(/(^\s*)|(\s*$)/g, "") + '\''
+          console.log('替换后值：', itemList);
           var thePrefix = strToCam(itemList.match(/(?<=\`).+?(?=\`)/)?.[0])
+          console.log('名称：', thePrefix);
           var type = itemList.match(/(?<=`\s).*?(?=\()/gi)?.[0] || ''
+          console.log('类型：', type);
           var isNull = itemList.indexOf('NOT NULL')
+          console.log('是否为空：', isNull);
           var theDefaultValue = itemList.match(/(?<=DEFAULT \').+?(?=\')/)?.[0]
+          console.log('默认值：', theDefaultValue);
           var describe = itemList.match(/(?<=COMMENT \').+(?=\')/)?.[0]
-          console.log('type', type);
+          console.log('type', type, ['bigint', 'int', 'tinyint'].includes(type));
           ['bigint', 'int', 'tinyint'].includes(type) ? type = 'number' : type = 'string'
           return `${thePrefix}?: ${type};  // ${describe} ${isNull !== -1 ? '【必填】' : ''} ${theDefaultValue === undefined ? '' : '【默认为：' + theDefaultValue + '】'} `
         })
@@ -73,6 +80,9 @@
         \`contract_status\` tinyint(4) NOT NULL DEFAULT '10' COMMENT '合同状态(10=正常 20=已过期 30=提前中止)',
         \`display_type\` tinyint(4) NOT NULL DEFAULT '0' COMMENT '显示品牌/品类控制字段(0=品牌 1=品类)',
         \`supplier_no\` varchar(20) NOT NULL COMMENT '供应商编号',
+        \`stock_qty\` decimal(12,3) NOT NULL DEFAULT '0.000' COMMENT '库存数量',
+        \`before_qty\` decimal(12,3) NOT NULL DEFAULT '0.000' COMMENT '调整前数量',
+        \`adjustment_qty\` decimal(12,3) NOT NULL DEFAULT '0.000' COMMENT '调整数量',
         \`settlement_method\` tinyint(4) NOT NULL COMMENT '结算方式 1=半月结 2=月结 3=季结 ',
         \`currency\` tinyint(4) NOT NULL COMMENT '币种(1=人民币 2=港币 3=美元)',
         \`effective_date\` date NOT NULL COMMENT '生效日期',
