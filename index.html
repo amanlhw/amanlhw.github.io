@@ -18,7 +18,6 @@
 </head>
 
 <body>
-  <!-- <a href="./sqlForemnt.html">SQL转换</a>hhh -->
   <div id="app">
     <el-container>
       <el-header>
@@ -28,7 +27,7 @@
       </el-header>
       <el-main>
         <el-row :gutter="20">
-          <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="1" v-for="item in toolList" :key="item.id">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6" v-for="item in toolList" :key="item.id">
             <a :href=item.link>
               <div class="grid-content"
                 :style="{border: '#' + Math.floor(Math.random() * 16777215).toString(16) + ' solid 1px'}">
@@ -49,7 +48,7 @@
       data: {
         toolList: [
           { id: 1, link: '../pages/sqlForemnt.html', title: 'SQL格式化' },
-          { id: 2, link: '../pages/sqlForemnt.html', title: 'SQL格式化' }
+          { id: 3, link: '../pages/plateGenerator.html', title: '车牌号生成' }
         ],
       }
     })
