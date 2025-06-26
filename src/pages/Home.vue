@@ -7,12 +7,15 @@
       </div>
 
       <div class="tools-grid">
-        <router-link :to="item.route" class="tool-card" v-for="item in toolList" :key="item.id">
+        <router-link :to="getToolLink(item)" class="tool-card" v-for="item in toolList" :key="item.id">
           <div class="tool-icon">
             <i :class="item.icon"></i>
           </div>
           <div class="tool-info">
-            <h3 class="tool-title">{{ item.title }}</h3>
+            <h3 class="tool-title">
+              {{ item.title }}
+              <i v-if="item.type === 'external'" class="el-icon-link external-indicator"></i>
+            </h3>
             <p class="tool-description">{{ item.description }}</p>
           </div>
         </router-link>
@@ -38,6 +41,7 @@ export default {
       toolList: [
         {
           id: 1,
+          type: 'internal',
           route: '/sql-format',
           title: 'SQL字段转换',
           description: '将SQL字段定义转换为TypeScript接口',
@@ -45,13 +49,58 @@ export default {
         },
         {
           id: 2,
+          type: 'internal',
           route: '/plate-generator',
           title: '车牌号生成器',
           description: '快速生成车牌号图片',
           icon: 'el-icon-truck'
         },
+        {
+          id: 3,
+          type: 'external',
+          url: 'https://sunzsh.github.io/json/',
+          title: 'JSON格式化',
+          description: '在线JSON格式化工具',
+          icon: 'el-icon-document'
+        },
+        {
+          id: 4,
+          type: 'external',
+          url: 'https://tool.lu',
+          title: '在线工具集',
+          description: '程序员在线工具集合',
+          icon: 'el-icon-folder'
+        },
+        {
+          id: 5,
+          type: 'external',
+          url: 'https://www.bejson.com',
+          title: 'BeJSON工具',
+          description: 'JSON在线解析及格式化验证',
+          icon: 'el-icon-edit-outline'
+        },
+        {
+          id: 6,
+          type: 'external',
+          url: 'https://www.json.cn',
+          title: 'JSON格式化',
+          description: '在线JSON格式化工具',
+          icon: 'el-icon-document'
+        }
       ],
     };
+  },
+  methods: {
+    getToolLink(item) {
+      if (item.type === 'external') {
+        // 构建外部网站嵌入链接
+        const url = encodeURIComponent(item.url);
+        const title = encodeURIComponent(item.title);
+        const desc = encodeURIComponent(item.description || '');
+        return `/web-embed/${ url }/${ title }/${ desc }`;
+      }
+      return item.route;
+    }
   }
 };
 </script>
@@ -96,7 +145,7 @@ export default {
 .tool-card {
   background: #fff;
   border-radius: 16px;
-  padding: 32px 24px;
+  padding: 24px 32px;
   text-decoration: none;
   color: inherit;
   box-shadow: 0 4px 24px rgba(179, 198, 224, 0.2);
@@ -138,6 +187,15 @@ export default {
   font-weight: 600;
   color: #333;
   margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.external-indicator {
+  font-size: 14px;
+  color: #1976d2;
+  opacity: 0.8;
 }
 
 .tool-description {
@@ -206,6 +264,7 @@ export default {
   }
 
   .tool-title {
+    justify-content: center;
     font-size: 18px;
   }
 }

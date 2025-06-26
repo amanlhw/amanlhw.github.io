@@ -3,6 +3,7 @@ import VueRouter from 'vue-router';
 import Home from '../pages/Home.vue';
 import SqlFormat from '../pages/SqlFormat.vue';
 import PlateGenerator from '../pages/PlateGenerator.vue';
+import WebEmbed from '../pages/WebEmbed.vue';
 
 Vue.use(VueRouter);
 
@@ -29,6 +30,14 @@ const routes = [
     component: PlateGenerator,
     meta: {
       title: '车牌号生成 - 叮咚的工具箱'
+    }
+  },
+  {
+    path: '/web-embed/:url/:title/:desc?',
+    name: 'WebEmbed',
+    component: WebEmbed,
+    meta: {
+      title: '外部网站 - 叮咚的工具箱'
     }
   },
   // 404 重定向到首页
