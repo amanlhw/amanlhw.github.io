@@ -1,358 +1,212 @@
 <template>
-  <div class="home">
-    <!-- 背景装饰 -->
-    <div class="background-decoration">
-      <div class="decoration-circle circle-1"></div>
-      <div class="decoration-circle circle-2"></div>
-      <div class="decoration-circle circle-3"></div>
-    </div>
+  <PageLayout title="叮咚的工具箱" :hideBackButton="true">
+    <div class="home-content">
+      <div class="welcome-section">
+        <h2>欢迎使用叮咚的工具箱</h2>
+        <p>这里提供了一些实用的开发工具，希望能帮助您提高工作效率</p>
+      </div>
 
-    <el-container class="main-container">
-      <!-- 头部区域 -->
-      <el-header class="header-section">
-        <div class="header-content">
-          <div class="logo-section">
-            <i class="el-icon-tools logo-icon"></i>
-            <h1 class="main-title">叮咚的工具箱</h1>
+      <div class="tools-grid">
+        <router-link :to="item.route" class="tool-card" v-for="item in toolList" :key="item.id">
+          <div class="tool-icon">
+            <i :class="item.icon"></i>
           </div>
-          <p class="subtitle">让开发更高效，让工作更轻松</p>
-        </div>
-      </el-header>
+          <div class="tool-info">
+            <h3 class="tool-title">{{ item.title }}</h3>
+            <p class="tool-description">{{ item.description }}</p>
+          </div>
+        </router-link>
+      </div>
 
-      <!-- 主要内容区域 -->
-      <el-main class="main-section">
-        <div class="tools-container">
-          <el-row :gutter="30" justify="center">
-            <el-col 
-              :xs="24" 
-              :sm="12" 
-              :md="8" 
-              :lg="6" 
-              v-for="item in toolList" 
-              :key="item.id"
-              class="tool-col"
-            >
-              <router-link :to="item.route" class="tool-link">
-                <el-card 
-                  class="tool-card" 
-                  shadow="hover"
-                  :body-style="{ padding: '0px' }"
-                >
-                  <div class="card-content">
-                    <div class="icon-wrapper">
-                      <i :class="item.icon" class="tool-icon"></i>
-                    </div>
-                    <div class="tool-info">
-                      <h3 class="tool-title">{{ item.title }}</h3>
-                      <p class="tool-description">{{ item.description }}</p>
-                    </div>
-                    <div class="card-overlay">
-                      <el-button type="primary" round>
-                        <i class="el-icon-arrow-right"></i>
-                        立即使用
-                      </el-button>
-                    </div>
-                  </div>
-                </el-card>
-              </router-link>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- 底部信息 -->
-        <div class="footer-info">
-          <el-divider content-position="center">
-            <span class="divider-text">
-              <i class="el-icon-star-on"></i>
-              更多工具开发中
-              <i class="el-icon-star-on"></i>
-            </span>
-          </el-divider>
-          <p class="footer-text">持续更新中，敬请期待...</p>
-        </div>
-      </el-main>
-    </el-container>
-  </div>
+      <div class="footer-section">
+        <p>Copyright © 2025 叮咚的工具箱</p>
+      </div>
+    </div>
+  </PageLayout>
 </template>
 
 <script>
+import PageLayout from '@/components/PageLayout.vue';
+
 export default {
   name: 'Home',
+  components: {
+    PageLayout
+  },
   data() {
     return {
       toolList: [
-        { 
-          id: 1, 
-          route: '/sql-format', 
-          title: 'SQL格式化', 
+        {
+          id: 1,
+          route: '/sql-format',
+          title: 'SQL字段转换',
           description: '将SQL字段定义转换为TypeScript接口',
           icon: 'el-icon-document-copy'
         },
-        { 
-          id: 2, 
-          route: '/plate-generator', 
-          title: '车牌号生成', 
-          description: '快速生成随机车牌号码',
+        {
+          id: 2,
+          route: '/plate-generator',
+          title: '车牌号生成器',
+          description: '快速生成车牌号图片',
           icon: 'el-icon-truck'
-        }
+        },
       ],
     };
   }
 };
 </script>
 
-<style lang="less" scoped>
-.home {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-  overflow: hidden;
+<style scoped>
+.home-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
 
-  .background-decoration {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1;
-    .decoration-circle {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      animation: float 6s ease-in-out infinite;
-    }
-    .circle-1 {
-      width: 200px;
-      height: 200px;
-      top: 8%;
-      left: 8%;
-      animation-delay: 0s;
-    }
-    .circle-2 {
-      width: 150px;
-      height: 150px;
-      top: 60%;
-      right: 10%;
-      animation-delay: 2s;
-    }
-    .circle-3 {
-      width: 100px;
-      height: 100px;
-      bottom: 18%;
-      left: 18%;
-      animation-delay: 4s;
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
+.welcome-section {
+  text-align: center;
+  margin-bottom: 48px;
+  padding: 40px 20px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(179, 198, 224, 0.2);
+}
+
+.welcome-section h2 {
+  color: #1976d2;
+  font-size: 32px;
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+.welcome-section p {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.tool-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 4px 24px rgba(179, 198, 224, 0.2);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 2px solid transparent;
+}
+
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(179, 198, 224, 0.3);
+  border-color: #1976d2;
+}
+
+.tool-icon {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-icon i {
+  font-size: 28px;
+  color: #fff;
+}
+
+.tool-info {
+  flex: 1;
+}
+
+.tool-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.tool-description {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.footer-section {
+  text-align: center;
+  padding: 24px 0;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .home-content {
+    padding: 0 16px;
   }
 
-  .main-container {
-    position: relative;
-    z-index: 2;
-    min-height: 100vh;
-    padding-top: 40px;
-    padding-bottom: 40px;
-    box-sizing: border-box;
+  .welcome-section {
+    padding: 32px 16px;
+    margin-bottom: 32px;
   }
 
-  .header-section {
-    background: transparent;
-    padding: 40px 0 0 0;
+  .welcome-section h2 {
+    font-size: 28px;
+  }
+
+  .tools-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .tool-card {
+    padding: 24px 20px;
+    flex-direction: column;
     text-align: center;
-    height:auto !important;
-    .header-content {
-      max-width: 800px;
-      margin: 0 auto;
-      .logo-section {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 20px;
-        .logo-icon {
-          font-size: 48px;
-          color: #fff;
-          margin-right: 20px;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-        .main-title {
-          color: #fff;
-          font-size: 48px;
-          font-weight: 700;
-          margin: 0;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-          letter-spacing: 2px;
-        }
-      }
-      .subtitle {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 18px;
-        margin: 0;
-        font-weight: 300;
-        letter-spacing: 1px;
-      }
-    }
+    gap: 16px;
   }
 
-  .main-section {
-    padding: 40px 20px 0 20px;
-    background: transparent;
-    .tools-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      .tool-col {
-        margin-bottom: 30px;
-      }
-      .tool-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        &:hover {
-          text-decoration: none;
-        }
-        .tool-card {
-          height: 280px;
-          border-radius: 16px;
-          border: none;
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-          &:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            .card-overlay {
-              opacity: 1;
-            }
-          }
-          .card-content {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px 20px;
-            position: relative;
-            .icon-wrapper {
-              width: 80px;
-              height: 80px;
-              border-radius: 50%;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 20px;
-              box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-              .tool-icon {
-                font-size: 36px;
-                color: #fff;
-              }
-            }
-            .tool-info {
-              text-align: center;
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              .tool-title {
-                color: #333;
-                font-size: 24px;
-                font-weight: 600;
-                margin: 0 0 10px 0;
-                letter-spacing: 1px;
-              }
-              .tool-description {
-                color: #666;
-                font-size: 14px;
-                margin: 0;
-                line-height: 1.5;
-                max-width: 200px;
-              }
-            }
-            .card-overlay {
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background: rgba(102, 126, 234, 0.9);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              opacity: 0;
-              transition: all 0.3s ease;
-              border-radius: 16px;
-            }
-          }
-        }
-      }
-    }
-    .footer-info {
-      margin-top: 60px;
-      text-align: center;
-      .divider-text {
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 16px;
-        font-weight: 500;
-        i {
-          margin: 0 10px;
-          color: #ffd700;
-        }
-      }
-      .footer-text {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 14px;
-        margin: 20px 0 0 0;
-      }
-    }
+  .tool-icon {
+    width: 50px;
+    height: 50px;
   }
 
-  /* 响应式设计 */
-  @media (max-width: 768px) {
-    .main-title {
-      font-size: 36px;
-    }
-    .logo-icon {
-      font-size: 36px;
-      margin-right: 15px;
-    }
-    .subtitle {
-      font-size: 16px;
-    }
-    .tool-card {
-      height: 240px;
-    }
-    .icon-wrapper {
-      width: 60px;
-      height: 60px;
-    }
-    .tool-icon {
-      font-size: 28px;
-    }
-    .tool-title {
-      font-size: 20px;
-    }
-  }
-  @media (max-width: 480px) {
-    .header-section {
-      padding: 30px 0;
-    }
-    .main-title {
-      font-size: 28px;
-    }
-    .logo-icon {
-      font-size: 28px;
-      margin-right: 10px;
-    }
-    .subtitle {
-      font-size: 14px;
-    }
-    .main-section {
-      padding: 20px 10px 0 10px;
-    }
+  .tool-icon i {
+    font-size: 24px;
   }
 }
-</style> 
+
+@media (max-width: 480px) {
+  .welcome-section h2 {
+    font-size: 24px;
+  }
+
+  .welcome-section p {
+    font-size: 14px;
+  }
+
+  .tool-card {
+    padding: 20px 16px;
+  }
+
+  .tool-title {
+    font-size: 18px;
+  }
+}
+</style>

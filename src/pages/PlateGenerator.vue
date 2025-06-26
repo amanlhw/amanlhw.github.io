@@ -1,35 +1,60 @@
 <template>
-  <div class="plate-generator">
-    <div class="container">
-      <h2>车牌号图片生成器</h2>
-      <div class="input-row">
-        <label for="plateInput">车牌号：</label>
-        <input 
-          type="text" 
-          id="plateInput" 
-          v-model="plateNumber"
-          maxlength="8" 
-          placeholder="如：粤B12345" 
-        />
-      </div>
-      <el-button type="primary" @click="generatePlate">生成图片</el-button>
-      <canvas ref="plateCanvas" width="320" height="80"></canvas>
-      <div class="action-row">
-        <el-button type="success" @click="downloadPlate">下载图片</el-button>
-        <router-link to="/">
-          <el-button>返回首页</el-button>
-        </router-link>
-      </div>
+  <PageLayout title="车牌号图片生成器">
+    <div class="plate-generator-content">
+      <el-card class="input-section" shadow="hover">
+        <div slot="header" class="card-header">
+          <i class="el-icon-edit"></i>
+          <span>输入车牌号</span>
+        </div>
+
+        <el-form :model="formData" label-width="100px" size="medium">
+          <el-form-item label="车牌号码">
+            <el-input v-model="plateNumber" placeholder="请输入车牌号，如：京A12345" clearable
+              @keyup.enter.native="generatePlate"></el-input>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" size="medium" icon="el-icon-picture" @click="generatePlate"
+              :disabled="!plateNumber.trim()">
+              生成图片
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <!-- 预览区域 -->
+      <el-card class="preview-section" shadow="hover">
+        <div slot="header" class="card-header">
+          <i class="el-icon-view"></i>
+          <span>车牌预览</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas ref="plateCanvas" width="320" height="80"></canvas>
+          <el-button type="success" size="medium" icon="el-icon-download" @click="downloadPlate"
+            :disabled="!plateNumber.trim()">
+            下载PNG图片
+          </el-button>
+        </div>
+      </el-card>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <script>
+import PageLayout from '@/components/PageLayout.vue';
+
 export default {
   name: 'PlateGenerator',
+  components: {
+    PageLayout
+  },
   data() {
     return {
-      plateNumber: ''
+      plateNumber: '京A12345',
+      formData: {
+        plateNumber: ''
+      }
     };
   },
   mounted() {
@@ -40,13 +65,13 @@ export default {
       const canvas = this.$refs.plateCanvas;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       ctx.fillStyle = '#1976d2';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
-      
+
       const radius = 10;
       const margin = 5;
       const x = margin;
@@ -66,7 +91,7 @@ export default {
       ctx.quadraticCurveTo(x, y, x + radius, y);
       ctx.closePath();
       ctx.stroke();
-      
+
       ctx.beginPath();
       ctx.arc(120, canvas.height / 2, 4, 0, 2 * Math.PI);
       ctx.fillStyle = '#fff';
@@ -75,20 +100,20 @@ export default {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
 
-      const showPlate = this.plateNumber || '京A88888';
+      const showPlate = this.plateNumber || '京A12345';
       const province = showPlate.slice(0, 1);
       const letter = showPlate.slice(1, 2);
       const numbers = showPlate.slice(2);
 
       ctx.font = 'bold 36px "Arial Narrow", "Microsoft YaHei", "黑体", Arial, sans-serif';
-      
+
       ctx.fillStyle = '#000000';
       ctx.fillText(province, 20 + 1.5, canvas.height / 2 + 4 + 1.5);
       ctx.fillStyle = '#E0E0E0';
       ctx.fillText(province, 20 - 0.5, canvas.height / 2 + 4 - 0.5);
       ctx.fillStyle = '#fff';
       ctx.fillText(province, 20, canvas.height / 2 + 4);
-      
+
       ctx.font = 'bold 40px "Arial Narrow", "Microsoft YaHei", "黑体", Arial, sans-serif';
 
       ctx.fillStyle = '#000000';
@@ -121,7 +146,7 @@ export default {
     downloadPlate() {
       const canvas = this.$refs.plateCanvas;
       const link = document.createElement('a');
-      link.download = `车牌号_${this.plateNumber || '京A88888'}.png`;
+      link.download = `车牌号_${ this.plateNumber || '京A88888' }.png`;
       link.href = canvas.toDataURL();
       link.click();
     }
@@ -137,98 +162,61 @@ export default {
 </script>
 
 <style scoped>
-
-.plate-generator {
-  background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.plate-generator-content {
+  margin: 0 auto;
   padding: 20px;
 }
 
-.container {
-  max-width: 420px;
-  width: 100%;
-  padding: 32px 28px 28px 28px;
-  background: #fff;
+.input-section,
+.preview-section,
+.action-section {
+  margin-bottom: 20px;
   border-radius: 16px;
-  box-shadow: 0 4px 24px #b3c6e0a0;
 }
 
-.container h2 {
-  text-align: center;
-  color: #1976d2;
-  margin-bottom: 28px;
-  letter-spacing: 2px;
-}
-
-.input-row {
-  margin-bottom: 22px;
+.card-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
-.input-row label {
-  display: inline-block;
-  width: 80px;
-  font-size: 16px;
-  color: #333;
-  text-align: right;
+.card-header i {
+  color: #1976d2;
 }
 
-.input-row input {
-  width: 200px;
-  padding: 8px 12px;
-  border: 1.5px solid #b3c6e0;
-  border-radius: 6px;
-  font-size: 18px;
-  transition: border 0.2s;
-}
-
-.input-row input:focus {
-  border: 1.5px solid #1976d2;
-  outline: none;
+.canvas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 #plateCanvas {
-  display: block;
-  margin: 32px auto 0;
-  box-shadow: 0 2px 8px #b3c6e055;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #fff;
 }
 
-.action-row {
-  margin-top: 18px;
-  text-align: center;
+.action-buttons {
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .plate-generator-content {
+    padding: 16px;
+    margin: 0 8px;
+  }
 }
 
 @media (max-width: 480px) {
-  .container {
-    padding: 20px 15px;
-  }
-  
-  .input-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .input-row label {
-    text-align: left;
-    width: auto;
-  }
-  
-  .input-row input {
-    width: 100%;
-  }
-  
-  .action-row {
-    flex-direction: column;
+  .plate-generator-content {
+    padding: 12px;
   }
 }
-</style> 
+</style>

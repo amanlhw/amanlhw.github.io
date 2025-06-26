@@ -10,17 +10,26 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home
+    component: Home,
+    meta: {
+      title: '叮咚的工具箱'
+    }
   },
   {
     path: '/sql-format',
     name: 'SqlFormat',
-    component: SqlFormat
+    component: SqlFormat,
+    meta: {
+      title: 'SQL格式化 - 叮咚的工具箱'
+    }
   },
   {
     path: '/plate-generator',
     name: 'PlateGenerator',
-    component: PlateGenerator
+    component: PlateGenerator,
+    meta: {
+      title: '车牌号生成 - 叮咚的工具箱'
+    }
   },
   // 404 重定向到首页
   {
@@ -33,6 +42,17 @@ const router = new VueRouter({
   mode: 'hash',
   base: process.env.BASE_URL,
   routes
+});
+
+// 全局路由守卫，动态更新页面标题
+router.beforeEach((to, from, next) => {
+  // 设置页面标题
+  if (to.meta && to.meta.title) {
+    document.title = to.meta.title;
+  } else {
+    document.title = '叮咚的工具箱';
+  }
+  next();
 });
 
 export default router; 

@@ -1,56 +1,67 @@
 <template>
-  <div class="sql-format">
-    <div id="lhw-body-box">
-      <div class="lhw-top-box">
-        <h3>SQL字段转换</h3>
-        <textarea 
-          id="sqlInput" 
-          v-model="sqlInput" 
-          placeholder="请输入SQL字段定义..."
-        ></textarea>
-        <div class="button-group">
-          <el-button type="primary" @click="convertSql">转换</el-button>
-          <el-button @click="clearAll">清空</el-button>
-          <el-button @click="loadTestData">测试数据</el-button>
-        </div>
-      </div>
-      
-      <div class="lhw-bottom-box">
-        <h3>转换结果</h3>
-        <textarea 
-          id="showSql" 
-          v-model="showSql" 
-          readonly 
-          placeholder="转换结果将显示在这里..."
-        ></textarea>
-        <div class="button-group">
-          <el-button type="success" @click="copyResult">复制结果</el-button>
-          <router-link to="/">
-            <el-button>返回首页</el-button>
-          </router-link>
-        </div>
-      </div>
-    </div>
+  <PageLayout title="SQL字段转换">
+    <el-row :gutter="32" class="sql-format-content">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+        <el-card class="input-section" shadow="hover">
+          <div slot="header" class="card-header">
+            <span class="card-title">
+              <i class="el-icon-edit"></i>
+              输入SQL字段定义
+            </span>
+          </div>
 
-    <!-- 复制成功提示 -->
-    <div id="lhw-alert-box" :class="alertClass">
-      <div class="alert-content">
-        <span>复制成功！</span>
-        <span class="delete" @click="hideAlert">×</span>
-      </div>
-    </div>
-  </div>
+          <el-input v-model="sqlInput" type="textarea" :rows="15" placeholder="请输入SQL字段定义..." resize="none"
+            class="sql-input" />
+
+          <div class="button-group">
+            <el-button type="primary" @click="convertSql" icon="el-icon-refresh">
+              转换
+            </el-button>
+            <el-button @click="clearAll" icon="el-icon-delete">
+              清空
+            </el-button>
+            <el-button @click="loadTestData" icon="el-icon-document">
+              测试数据
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
+        <el-card class="output-section" shadow="hover">
+          <div slot="header" class="card-header">
+            <span class="card-title">
+              <i class="el-icon-document"></i>
+              转换结果
+            </span>
+          </div>
+
+          <el-input v-model="showSql" type="textarea" :rows="15" placeholder="转换结果将显示在这里..." readonly resize="none"
+            class="sql-output" />
+
+          <div class="button-group">
+            <el-button type="success" @click="copyResult" icon="el-icon-document-copy">
+              复制结果
+            </el-button>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+  </PageLayout>
 </template>
 
 <script>
+import PageLayout from '@/components/PageLayout.vue';
+
 export default {
   name: 'SqlFormat',
+  components: {
+    PageLayout
+  },
   data() {
     return {
       sqlInput: '',
-      showSql: '',
-      alertClass: 'alert-hide',
-      alertTimer: null
+      showSql: ''
     };
   },
   methods: {
@@ -62,29 +73,8 @@ export default {
       }
 
       try {
-        const value = this.sqlInput;
-        const valData = value.toString().substring(0, value.lastIndexOf(',')).split("',");
-        
-        const result = valData
-          .filter(item => item !== '')
-          .map(item => {
-            const cleanItem = item.replace(/(^\s*)|(\s*$)/g, "") + '\'';
-            const prefixMatch = cleanItem.match(/(?<=\`).+?(?=\`)/);
-            const thePrefix = this.strToCam(prefixMatch ? prefixMatch[0] : '');
-            const typeMatch = cleanItem.match(/(?<=`\s).*?(?=\()/gi);
-            const type = typeMatch ? typeMatch[0] : '';
-            const isNull = cleanItem.indexOf('NOT NULL');
-            const defaultValueMatch = cleanItem.match(/(?<=DEFAULT \').+?(?=\')/);
-            const theDefaultValue = defaultValueMatch ? defaultValueMatch[0] : undefined;
-            const describeMatch = cleanItem.match(/(?<=COMMENT \').+(?=\')/);
-            const describe = describeMatch ? describeMatch[0] : '';
-            
-            let finalType = ['bigint', 'int', 'tinyint'].includes(type) ? 'number' : 'string';
-            
-            return `${thePrefix}?: ${finalType};  // ${describe} ${isNull !== -1 ? '【必填】' : ''} ${theDefaultValue === undefined ? '' : '【默认为：' + theDefaultValue + '】'} `;
-          });
-
-        this.showSql = result.join('\n').replace(/,/g, "");
+        const result = this.parseSqlFields(this.sqlInput);
+        this.showSql = result.join('\n');
         this.$message.success('转换完成！');
       } catch (error) {
         this.$message.error('转换失败，请检查输入格式');
@@ -92,14 +82,120 @@ export default {
       }
     },
 
-    // 转驼峰命名
-    strToCam(str) {
-      if (!str) return '';
-      const arr = str.split('_');
-      for (let i = 1; i < arr.length; i++) {
-        arr[i] = arr[i].charAt(0).toUpperCase() + arr[i].substr(1, arr[i].length - 1);
+    // 解析SQL字段定义
+    parseSqlFields(sqlInput) {
+      // 清理输入，移除多余的空白字符
+      const cleanedInput = sqlInput.trim();
+
+      // 分割字段定义，支持多种分隔符
+      const fieldDefinitions = this.splitFieldDefinitions(cleanedInput);
+
+      return fieldDefinitions
+        .filter(field => field.trim())
+        .map(field => this.parseSingleField(field))
+        .filter(result => result); // 过滤掉解析失败的字段
+    },
+
+    // 分割字段定义
+    splitFieldDefinitions(input) {
+      // 移除最后一个逗号（如果存在）
+      const trimmedInput = input.replace(/,\s*$/, '');
+
+      // 使用更精确的分割方式，避免在引号内分割
+      const fields = [];
+      let currentField = '';
+      let inQuotes = false;
+      let quoteChar = '';
+
+      for (let i = 0; i < trimmedInput.length; i++) {
+        const char = trimmedInput[i];
+
+        if ((char === "'" || char === '"') && (i === 0 || trimmedInput[i - 1] !== '\\')) {
+          if (!inQuotes) {
+            inQuotes = true;
+            quoteChar = char;
+          } else if (char === quoteChar) {
+            inQuotes = false;
+          }
+        }
+
+        if (char === ',' && !inQuotes) {
+          fields.push(currentField.trim());
+          currentField = '';
+        } else {
+          currentField += char;
+        }
       }
-      return arr.join('');
+
+      if (currentField.trim()) {
+        fields.push(currentField.trim());
+      }
+
+      return fields;
+    },
+
+    // 解析单个字段定义
+    parseSingleField(fieldDefinition) {
+      try {
+        // 提取字段名（反引号包围的内容）
+        const fieldNameMatch = fieldDefinition.match(/`([^`]+)`/);
+        if (!fieldNameMatch) {
+          console.warn('无法解析字段名:', fieldDefinition);
+          return null;
+        }
+
+        const fieldName = fieldNameMatch[1];
+        const camelCaseName = this.strToCam(fieldName);
+
+        // 提取数据类型
+        const typeMatch = fieldDefinition.match(/`\s*(\w+)/i);
+        const dataType = typeMatch ? typeMatch[1].toLowerCase() : '';
+
+        // 判断是否为数字类型
+        const numberTypes = ['bigint', 'int', 'tinyint', 'smallint', 'mediumint', 'decimal', 'float', 'double'];
+        const finalType = numberTypes.includes(dataType) ? 'number' : 'string';
+
+        // 检查是否必填
+        const isRequired = fieldDefinition.includes('NOT NULL');
+
+        // 提取默认值
+        const defaultValueMatch = fieldDefinition.match(/DEFAULT\s+['"`]?([^'"`,\s]+)['"`]?/i);
+        const defaultValue = defaultValueMatch ? defaultValueMatch[1] : null;
+
+        // 提取注释
+        const commentMatch = fieldDefinition.match(/COMMENT\s+['"`]([^'"`]+)['"`]/i);
+        const comment = commentMatch ? commentMatch[1] : '';
+
+        // 构建注释信息
+        const commentParts = [];
+        if (comment) commentParts.push(comment);
+        if (isRequired) commentParts.push('【必填】');
+        if (defaultValue !== null) commentParts.push(`【默认为：${ defaultValue }】`);
+
+        const fullComment = commentParts.length > 0 ? `  // ${ commentParts.join(' ') }` : '';
+
+        // 构建最终结果
+        const requiredMark = isRequired ? '' : '?';
+        return `${ camelCaseName }${ requiredMark }: ${ finalType };${ fullComment }`;
+
+      } catch (error) {
+        console.warn('解析字段失败:', fieldDefinition, error);
+        return null;
+      }
+    },
+
+    // 转驼峰命名（优化版本）
+    strToCam(str) {
+      if (!str || typeof str !== 'string') return '';
+
+      return str
+        .toLowerCase()
+        .split('_')
+        .map((word, index) => {
+          if (index === 0) return word;
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join('');
     },
 
     // 复制结果
@@ -110,7 +206,7 @@ export default {
       }
 
       navigator.clipboard.writeText(this.showSql).then(() => {
-        this.showAlert();
+        this.$message.success('复制成功！');
       }).catch(() => {
         // 降级方案
         const textArea = document.createElement('textarea');
@@ -119,28 +215,8 @@ export default {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        this.showAlert();
+        this.$message.success('复制成功！');
       });
-    },
-
-    // 显示提示
-    showAlert() {
-      if (this.alertTimer) {
-        clearTimeout(this.alertTimer);
-      }
-      
-      this.alertClass = 'alert-show';
-      this.alertTimer = setTimeout(() => {
-        this.alertClass = 'alert-hide';
-      }, 3000);
-    },
-
-    // 隐藏提示
-    hideAlert() {
-      if (this.alertTimer) {
-        clearTimeout(this.alertTimer);
-      }
-      this.alertClass = 'alert-hide';
     },
 
     // 清空所有
@@ -181,131 +257,95 @@ export default {
 </script>
 
 <style scoped>
-
-.sql-format {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
-}
-
-#lhw-body-box {
-  width: 80%;
-  height: 80%;
-  padding: 24px;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  background: white;
-}
-
-.lhw-top-box,
-.lhw-bottom-box {
-  height: 50%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.lhw-top-box h3,
-.lhw-bottom-box h3 {
-  margin: 0;
-  color: #333;
-  font-size: 18px;
-}
-
-#sqlInput,
-#showSql {
+.sql-format-content {
   height: 100%;
-  padding: 10px;
+}
+
+.input-section,
+.output-section {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
   font-size: 16px;
-  border-radius: 4px;
-  border: #ddd 1px solid;
-  transition: all 0.30s ease-in-out;
-  resize: none;
+  font-weight: 600;
+  color: #303133;
+}
+
+.card-title i {
+  margin-right: 8px;
+  color: #409EFF;
+}
+
+.sql-input,
+.sql-output {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.sql-output>>>.el-textarea__inner {
+  background-color: #f8f9fa;
   font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-}
-
-#sqlInput:hover,
-#sqlInput:focus {
-  border: #409EFF 1px solid;
-}
-
-#showSql:hover {
-  cursor: pointer;
 }
 
 .button-group {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* 滚动条样式 */
-.sql-format::-webkit-scrollbar,
-#sqlInput::-webkit-scrollbar,
-#showSql::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .sql-format-content {
+    height: auto;
+  }
+
+  .input-section,
+  .output-section {
+    min-height: 400px;
+    margin-bottom: 24px;
+  }
 }
 
-.sql-format::-webkit-scrollbar-thumb,
-#sqlInput::-webkit-scrollbar-thumb,
-#showSql::-webkit-scrollbar-thumb {
-  background-color: #d4d3d3bb;
-  border-radius: 1em;
+@media (max-width: 768px) {
+
+  .input-section,
+  .output-section {
+    min-height: 350px;
+    margin-bottom: 20px;
+  }
+
+  .button-group {
+    justify-content: center;
+  }
 }
 
-.sql-format::-webkit-scrollbar-track,
-#sqlInput::-webkit-scrollbar-track,
-#showSql::-webkit-scrollbar-track {
-  background-color: #ffffffbd;
-  border-radius: 1em;
-}
+@media (max-width: 480px) {
 
-/* 提示框样式 */
-#lhw-alert-box {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  transition: all 0.3s ease;
-}
+  .input-section,
+  .output-section {
+    min-height: 300px;
+    margin-bottom: 16px;
+  }
 
-.alert-hide {
-  opacity: 0;
-  transform: translateX(100%);
-  pointer-events: none;
-}
+  .button-group {
+    flex-direction: column;
+  }
 
-.alert-show {
-  opacity: 1;
-  transform: translateX(0);
+  .button-group .el-button {
+    width: 100%;
+    margin-left: 0;
+  }
 }
-
-.alert-content {
-  background: #67c23a;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.delete {
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.delete:hover {
-  opacity: 0.8;
-}
-</style> 
+</style>
