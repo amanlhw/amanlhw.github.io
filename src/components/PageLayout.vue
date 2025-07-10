@@ -14,7 +14,7 @@
     </div>
 
     <!-- 内容区域 -->
-    <div class="content">
+    <div class="content" :class="{ 'content-full-width': fullWidth }">
       <slot></slot>
     </div>
   </div>
@@ -29,6 +29,10 @@ export default {
       required: true
     },
     hideBackButton: {
+      type: Boolean,
+      default: false
+    },
+    fullWidth: {
       type: Boolean,
       default: false
     }
@@ -89,6 +93,11 @@ export default {
   box-sizing: border-box;
 }
 
+.content-full-width {
+  max-width: 100%;
+  margin: 0;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .header-content {
@@ -110,6 +119,10 @@ export default {
   .content {
     padding: 16px;
   }
+
+  .content-full-width {
+    padding: 16px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -122,6 +135,10 @@ export default {
   }
 
   .content {
+    padding: 12px;
+  }
+
+  .content-full-width {
     padding: 12px;
   }
 }

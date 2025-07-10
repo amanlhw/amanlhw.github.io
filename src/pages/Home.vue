@@ -57,6 +57,14 @@ export default {
         },
         {
           id: 3,
+          type: 'internal',
+          route: '/work-time-schedule',
+          title: '工时排布统计',
+          description: '记录和管理每周工时安排',
+          icon: 'el-icon-time'
+        },
+        {
+          id: 4,
           type: 'external',
           url: 'https://sunzsh.github.io/json/',
           title: 'JSON格式化',
@@ -64,7 +72,7 @@ export default {
           icon: 'el-icon-document'
         },
         {
-          id: 4,
+          id: 5,
           type: 'external',
           url: 'https://tool.lu',
           title: '在线工具集',
@@ -72,7 +80,7 @@ export default {
           icon: 'el-icon-folder'
         },
         {
-          id: 5,
+          id: 6,
           type: 'external',
           url: 'https://www.bejson.com',
           title: 'BeJSON工具',
@@ -80,7 +88,7 @@ export default {
           icon: 'el-icon-edit-outline'
         },
         {
-          id: 6,
+          id: 7,
           type: 'external',
           url: 'https://www.json.cn',
           title: 'JSON格式化',

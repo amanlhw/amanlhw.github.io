@@ -4,6 +4,7 @@ import Home from '../pages/Home.vue';
 import SqlFormat from '../pages/SqlFormat.vue';
 import PlateGenerator from '../pages/PlateGenerator.vue';
 import WebEmbed from '../pages/WebEmbed.vue';
+import WorkTimeSchedule from '../pages/WorkTimeSchedule.vue';
 
 Vue.use(VueRouter);
 
@@ -38,6 +39,14 @@ const routes = [
     component: WebEmbed,
     meta: {
       title: '外部网站 - 叮咚的工具箱'
+    }
+  },
+  {
+    path: '/work-time-schedule',
+    name: 'WorkTimeSchedule',
+    component: WorkTimeSchedule,
+    meta: {
+      title: '工时排布统计 - 叮咚的工具箱'
     }
   },
   // 404 重定向到首页
