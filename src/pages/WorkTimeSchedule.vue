@@ -2,17 +2,19 @@
   <PageLayout title="工时排布统计" :fullWidth="true">
     <div class="work-time-content">
       <div class="week-navigation">
-        <el-button type="text" icon="el-icon-arrow-left" @click="previousWeek">上一周</el-button>
+        <div class="nav-button-container">
+          <el-button type="text" icon="el-icon-arrow-left" @click="previousWeek">上一周</el-button>
+        </div>
         <div class="week-display">
           <div class="week-title-container" @click="goToCurrentWeek">
             <span class="week-title">第{{ currentWeekNumber }}周</span>
             <i v-if="!isCurrentWeek" class="el-icon-refresh current-week-icon" title="回到本周"></i>
-            <!-- 调试信息 -->
-            <span style="font-size: 12px; color: #999;">({{ isCurrentWeek ? '当前周' : '非当前周' }})</span>
           </div>
           <span class="week-date-range">{{ weekRange }}</span>
         </div>
-        <el-button type="text" icon="el-icon-arrow-right" @click="nextWeek">下一周</el-button>
+        <div class="nav-button-container">
+          <el-button type="text" icon="el-icon-arrow-right" @click="nextWeek">下一周</el-button>
+        </div>
       </div>
 
       <div class="week-grid">
@@ -46,13 +48,19 @@
           </div>
 
           <div class="work-items" @click="handleWorkItemsClick(day.date, $event)">
-            <div class="work-item" v-for="(item, index) in day.items" :key="index" @click.stop>
+            <div class="work-item" v-for="(item, index) in day.items" :key="index"
+              @click.stop="editWorkItem(day.date, index, item)">
               <div class="item-content">
                 <div class="item-title">{{ item.title }}</div>
-                <div class="item-hours">{{ item.hours }}小时</div>
-              </div>
-              <div class="item-actions">
-                <el-button type="text" icon="el-icon-delete" @click="deleteWorkItem(day.date, index)"></el-button>
+                <div class="item-hours-row">
+                  <span class="item-hours">{{ item.hours }}小时</span>
+                  <div class="item-actions">
+                    <i class="el-icon-edit action-icon edit-icon" @click.stop="editWorkItem(day.date, index, item)"
+                      title="编辑"></i>
+                    <i class="el-icon-delete action-icon delete-icon" @click.stop="deleteWorkItem(day.date, index)"
+                      title="删除"></i>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="empty-placeholder" v-if="day.items.length === 0">
@@ -63,21 +71,23 @@
         </div>
       </div>
 
-      <!-- 添加事项对话框 -->
-      <el-dialog title="添加工时事项" :visible.sync="dialogVisible" width="600px" :before-close="handleDialogClose">
+      <!-- 添加/编辑事项对话框 -->
+      <el-dialog :title="isEditing ? '编辑工时事项' : '添加工时事项'" :visible.sync="dialogVisible" width="600px"
+        :before-close="handleDialogClose">
         <el-form :model="newItem" :rules="rules" ref="itemForm" label-width="80px">
           <el-form-item label="事项名称" prop="title">
-            <el-input v-model="newItem.title" placeholder="请输入事项名称" maxlength="50" type="textarea" autosize></el-input>
+            <el-input ref="titleInput" v-model="newItem.title" placeholder="请输入事项名称" maxlength="50" type="textarea"
+              autosize></el-input>
           </el-form-item>
           <el-form-item label="工时" prop="hours">
-            <el-input-number v-model="newItem.hours" :min="0.5" :max="24" :step="0.5" :precision="1"
+            <el-input-number ref="hoursInput" v-model="newItem.hours" :min="0.1" :max="24" :step="1" :precision="1"
               placeholder="请输入工时"></el-input-number>
             <span class="hours-unit">小时</span>
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
           <el-button @click="handleDialogClose">取消</el-button>
-          <el-button type="primary" @click="addWorkItem">确定</el-button>
+          <el-button type="primary" @click="isEditing ? updateWorkItem() : addWorkItem()">确定</el-button>
         </div>
       </el-dialog>
     </div>
@@ -99,7 +109,9 @@ export default {
       currentWeekStart: null, // 当前显示周的开始日期
       isCurrentWeek: false, // 是否为当前周
       dialogVisible: false,
+      isEditing: false, // 是否为编辑模式
       currentDay: '',
+      currentEditIndex: -1, // 当前编辑的项目索引
       newItem: {
         title: '',
         hours: 1
@@ -120,7 +132,7 @@ export default {
       if (this.weekDays.length === 0) return '';
       const firstDay = this.weekDays[0];
       const lastDay = this.weekDays[6];
-      return `${ firstDay.date } - ${ lastDay.date }`;
+      return `${ firstDay.date } ～ ${ lastDay.date }`;
     },
     currentWeekNumber() {
       if (!this.currentWeekStart) return '';
@@ -199,6 +211,8 @@ export default {
     // 显示添加对话框
     showAddDialog(date) {
       this.currentDay = date;
+      this.isEditing = false;
+      this.currentEditIndex = -1;
       this.dialogVisible = true;
       this.newItem = {
         title: '',
@@ -206,13 +220,34 @@ export default {
       };
       this.$nextTick(() => {
         this.$refs.itemForm && this.$refs.itemForm.clearValidate();
+        // 新增时聚焦到事项名称输入框
+        this.$refs.titleInput && this.$refs.titleInput.focus();
+      });
+    },
+
+    // 显示编辑对话框
+    editWorkItem(date, index, item) {
+      this.currentDay = date;
+      this.isEditing = true;
+      this.currentEditIndex = index;
+      this.dialogVisible = true;
+      this.newItem = {
+        title: item.title,
+        hours: item.hours
+      };
+      this.$nextTick(() => {
+        this.$refs.itemForm && this.$refs.itemForm.clearValidate();
+        // 编辑时聚焦到工时输入框
+        this.$refs.hoursInput && this.$refs.hoursInput.focus();
       });
     },
 
     // 关闭对话框
     handleDialogClose() {
       this.dialogVisible = false;
+      this.isEditing = false;
       this.currentDay = '';
+      this.currentEditIndex = -1;
       this.newItem = {
         title: '',
         hours: 1
@@ -232,6 +267,24 @@ export default {
             this.saveData();
             this.handleDialogClose();
             this.$message.success('添加成功');
+          }
+        }
+      });
+    },
+
+    // 更新工时事项
+    updateWorkItem() {
+      this.$refs.itemForm.validate((valid) => {
+        if (valid) {
+          const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
+          if (dayIndex !== -1 && this.currentEditIndex !== -1) {
+            this.weekDays[dayIndex].items[this.currentEditIndex] = {
+              title: this.newItem.title,
+              hours: this.newItem.hours
+            };
+            this.saveData();
+            this.handleDialogClose();
+            this.$message.success('更新成功');
           }
         }
       });
@@ -424,6 +477,22 @@ export default {
   color: #666;
 }
 
+.nav-button-container {
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.nav-button-container:hover {
+  background-color: #f5f7fa;
+}
+
+.nav-button-container .el-button {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
 
 
 .week-grid {
@@ -449,7 +518,7 @@ export default {
   text-align: center;
   margin: 8px;
   padding: 8px;
-  background: #fafafa;
+  background: #eeeeee;
   border-radius: 8px;
 }
 
@@ -516,7 +585,7 @@ export default {
   margin: 0 10px 10px;
   font-size: 14px;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
   gap: 2px;
 }
@@ -528,6 +597,7 @@ export default {
 .current-hours {
   color: #1976d2;
   font-weight: 600;
+  font-size: 20px;
 }
 
 .hours-separator {
@@ -616,7 +686,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: default;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .item-content {
@@ -630,6 +701,13 @@ export default {
   word-break: break-all;
 }
 
+.item-hours-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
 .item-hours {
   font-size: 12px;
   color: #1976d2;
@@ -638,7 +716,34 @@ export default {
 
 .item-actions {
   flex-shrink: 0;
-  margin-left: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.action-icon {
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.edit-icon {
+  color: #409EFF;
+}
+
+.edit-icon:hover {
+  background-color: #ecf5ff;
+  color: #66b1ff;
+}
+
+.delete-icon {
+  color: #F56C6C;
+}
+
+.delete-icon:hover {
+  background-color: #fef0f0;
+  color: #f78989;
 }
 
 .item-actions .el-button {
@@ -663,18 +768,27 @@ export default {
 
   .week-navigation {
     padding: 12px 16px;
-    flex-direction: column;
     gap: 12px;
-  }
-
-  .week-display {
-    order: -1;
   }
 
   .week-grid {
     grid-template-columns: 1fr;
     gap: 12px;
     flex: none;
+  }
+
+  .nav-button-container {
+    padding: 0;
+    transition: none;
+  }
+
+  .nav-button-container:hover {
+    background-color: unset;
+  }
+
+  .nav-button-container .el-button {
+    font-size: 14px;
+    padding: 0;
   }
 
   .day-column {
