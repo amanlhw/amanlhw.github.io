@@ -10,7 +10,16 @@
             <span class="week-title">第{{ currentWeekNumber }}周</span>
             <i v-if="!isCurrentWeek" class="el-icon-refresh current-week-icon" title="回到本周"></i>
           </div>
-          <span class="week-date-range">{{ weekRange }}</span>
+          <div class="week-stats">
+            <span class="week-date-range">{{ weekRange }}</span>
+            <div class="week-hours-summary">
+              <span class="week-total">{{ weekTotalHours }}h</span>
+              <span class="week-separator">/</span>
+              <span class="week-target">{{ weekTargetHours }}h</span>
+              <span v-if="parseFloat(weekRemainingHours) > 0" class="week-remaining">(还差{{ weekRemainingHours
+                }}h)</span>
+            </div>
+          </div>
         </div>
         <div class="nav-button-container">
           <el-button type="text" icon="el-icon-arrow-right" @click="nextWeek">下一周</el-button>
@@ -42,9 +51,11 @@
             :class="{ 'weekend-hours': isWeekend(day.name, day.date) && !isWorkdayOnWeekend(day.name, day.date) }">
             <i class="el-icon-time"></i>
             <span class="current-hours">{{ getTotalHours(day.items) }}</span>
-            <span class="hours-separator">/</span>
+            <span class="hours-separator">+</span>
+            <span class="remaining-hours">{{ getRemainingHours(day.items, day.name, day.date) }}</span>
+            <span class="hours-equals">=</span>
             <span class="target-hours">{{ (isWeekend(day.name, day.date) && !isWorkdayOnWeekend(day.name, day.date)) ?
-              '0' : '8' }}</span>
+              '0' : '8.0' }}</span>
           </div>
 
           <div class="work-items" @click="handleWorkItemsClick(day.date, $event)">
@@ -53,7 +64,11 @@
               <div class="item-content">
                 <div class="item-title">{{ item.title }}</div>
                 <div class="item-hours-row">
-                  <span class="item-hours">{{ item.hours }}小时</span>
+                  <div class="item-hours-section">
+                    <span class="item-hours">{{ item.hours }}小时</span>
+                    <i v-if="item.link" class="el-icon-link link-icon" @click.stop="openLink(item.link)"
+                      title="打开云效链接"></i>
+                  </div>
                   <div class="item-actions">
                     <i class="el-icon-edit action-icon edit-icon" @click.stop="editWorkItem(day.date, index, item)"
                       title="编辑"></i>
@@ -83,6 +98,17 @@
             <el-input-number ref="hoursInput" v-model="newItem.hours" :min="0.1" :max="24" :step="1" :precision="1"
               placeholder="请输入工时"></el-input-number>
             <span class="hours-unit">小时</span>
+            <div class="quick-hours-options">
+              <el-button size="mini" type="text" @click="setQuickHours(2)">2小时</el-button>
+              <el-button size="mini" type="text" @click="setQuickHours(4)">4小时</el-button>
+              <el-button size="mini" type="text" @click="setQuickHours(8)">8小时</el-button>
+            </div>
+          </el-form-item>
+          <el-form-item label="云效链接">
+            <div class="link-input-container">
+              <el-input v-model="newItem.link" placeholder="请输入云效任务链接（可选）" clearable></el-input>
+              <el-button @click="parseLink" :disabled="!newItem.link" type="primary" size="small">解析</el-button>
+            </div>
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
@@ -114,7 +140,8 @@ export default {
       currentEditIndex: -1, // 当前编辑的项目索引
       newItem: {
         title: '',
-        hours: 1
+        hours: 1,
+        link: ''
       },
       rules: {
         title: [
@@ -140,6 +167,26 @@ export default {
       const days = Math.floor((this.currentWeekStart - yearStart) / (24 * 60 * 60 * 1000));
       const weekNumber = Math.ceil((days + yearStart.getDay() + 1) / 7);
       return weekNumber;
+    },
+    weekTotalHours() {
+      if (this.weekDays.length === 0) return 0;
+      const total = this.weekDays.reduce((sum, day) => {
+        return sum + parseFloat(this.getTotalHours(day.items));
+      }, 0);
+      return total.toFixed(1);
+    },
+    weekTargetHours() {
+      if (this.weekDays.length === 0) return 0;
+      const target = this.weekDays.reduce((sum, day) => {
+        const isWeekendDay = this.isWeekend(day.name, day.date);
+        const isWorkdayWeekend = this.isWorkdayOnWeekend(day.name, day.date);
+        return sum + ((isWeekendDay && !isWorkdayWeekend) ? 0 : 8);
+      }, 0);
+      return target;
+    },
+    weekRemainingHours() {
+      const remaining = this.weekTargetHours - parseFloat(this.weekTotalHours);
+      return Math.max(0, remaining).toFixed(1);
     }
   },
   mounted() {
@@ -216,7 +263,8 @@ export default {
       this.dialogVisible = true;
       this.newItem = {
         title: '',
-        hours: 1
+        hours: 1,
+        link: ''
       };
       this.$nextTick(() => {
         this.$refs.itemForm && this.$refs.itemForm.clearValidate();
@@ -233,7 +281,8 @@ export default {
       this.dialogVisible = true;
       this.newItem = {
         title: item.title,
-        hours: item.hours
+        hours: item.hours,
+        link: item.link || ''
       };
       this.$nextTick(() => {
         this.$refs.itemForm && this.$refs.itemForm.clearValidate();
@@ -250,7 +299,8 @@ export default {
       this.currentEditIndex = -1;
       this.newItem = {
         title: '',
-        hours: 1
+        hours: 1,
+        link: ''
       };
     },
 
@@ -262,7 +312,8 @@ export default {
           if (dayIndex !== -1) {
             this.weekDays[dayIndex].items.push({
               title: this.newItem.title,
-              hours: this.newItem.hours
+              hours: this.newItem.hours,
+              link: this.newItem.link
             });
             this.saveData();
             this.handleDialogClose();
@@ -280,7 +331,8 @@ export default {
           if (dayIndex !== -1 && this.currentEditIndex !== -1) {
             this.weekDays[dayIndex].items[this.currentEditIndex] = {
               title: this.newItem.title,
-              hours: this.newItem.hours
+              hours: this.newItem.hours,
+              link: this.newItem.link
             };
             this.saveData();
             this.handleDialogClose();
@@ -409,6 +461,14 @@ export default {
       return total.toFixed(1);
     },
 
+    // 计算未填写工时
+    getRemainingHours(items, dayName, date) {
+      const targetHours = (this.isWeekend(dayName, date) && !this.isWorkdayOnWeekend(dayName, date)) ? 0 : 8;
+      const currentHours = this.getTotalHours(items);
+      const remaining = Math.max(0, targetHours - parseFloat(currentHours));
+      return remaining.toFixed(1);
+    },
+
     // 处理工时事项区域点击
     handleWorkItemsClick(date, event) {
       // 如果点击的是空白区域（不是工时事项），则显示添加对话框
@@ -416,6 +476,80 @@ export default {
         event.target.classList.contains('empty-placeholder') ||
         event.target.closest('.empty-placeholder')) {
         this.showAddDialog(date);
+      }
+    },
+
+    // 设置快捷工时
+    setQuickHours(hours) {
+      this.newItem.hours = hours;
+    },
+
+    // 打开链接
+    openLink(link) {
+      if (link) {
+        window.open(link, '_blank');
+      }
+    },
+
+    // 解析云效链接标题
+    parseLink() {
+      if (!this.newItem.link) {
+        this.$message.warning('请先输入云效链接');
+        return;
+      }
+
+      try {
+        // 解析云效链接格式：https://devops.aliyun.com/projex/task/LTMS-9379# 《小力APP设置增加同步下载时效-前端》
+        const url = this.newItem.link.trim();
+
+        // 方法1：从URL的hash部分提取标题（#后面的内容）
+        const hashMatch = url.match(/#\s*《(.+?)》/);
+        if (hashMatch && hashMatch[1]) {
+          this.newItem.title = hashMatch[1].trim();
+          this.$message.success('已解析链接标题：' + this.newItem.title);
+          this.$nextTick(() => {
+            this.$refs.itemForm && this.$refs.itemForm.validateField('title');
+          });
+          return;
+        }
+
+        // 方法2：从URL的hash部分提取标题（#后面的内容，不带书名号）
+        const hashMatch2 = url.match(/#\s*(.+)/);
+        if (hashMatch2 && hashMatch2[1]) {
+          this.newItem.title = hashMatch2[1].trim();
+          this.$message.success('已解析链接标题：' + this.newItem.title);
+          this.$nextTick(() => {
+            this.$refs.itemForm && this.$refs.itemForm.validateField('title');
+          });
+          return;
+        }
+
+        // 方法3：从URL路径中提取任务编号
+        const taskMatch = url.match(/\/task\/([A-Z]+-\d+)/);
+        if (taskMatch && taskMatch[1]) {
+          this.newItem.title = taskMatch[1];
+          this.$message.success('已解析任务编号：' + this.newItem.title);
+          this.$nextTick(() => {
+            this.$refs.itemForm && this.$refs.itemForm.validateField('title');
+          });
+          return;
+        }
+
+        // 方法4：如果都没有匹配到，使用URL的最后部分
+        const urlParts = url.split('/');
+        const lastPart = urlParts[urlParts.length - 1];
+        if (lastPart && lastPart !== 'task') {
+          this.newItem.title = lastPart;
+          this.$message.warning('未找到标准格式标题，已使用链接末尾作为事项名称');
+          this.$nextTick(() => {
+            this.$refs.itemForm && this.$refs.itemForm.validateField('title');
+          });
+          return;
+        }
+
+        this.$message.warning('无法解析链接，请手动输入事项名称');
+      } catch (error) {
+        this.$message.error('解析链接失败：' + error.message);
       }
     }
   }
@@ -443,9 +577,9 @@ export default {
 
 .week-display {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 16px;
 }
 
 .week-title-container {
@@ -453,6 +587,7 @@ export default {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  flex-direction: row;
 }
 
 .week-title {
@@ -472,9 +607,56 @@ export default {
   transform: scale(1.1);
 }
 
+.week-stats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
 .week-date-range {
   font-size: 14px;
   color: #666;
+  font-weight: 500;
+}
+
+.week-hours-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.week-total {
+  color: #999;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.week-separator {
+  color: #ccc;
+  font-weight: 400;
+}
+
+.week-target {
+  color: #999;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.week-remaining {
+  color: #ff0059;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 4px;
+  background: #fff5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #ffebee;
 }
 
 .nav-button-container {
@@ -595,13 +777,24 @@ export default {
 }
 
 .current-hours {
-  color: #1976d2;
+  color: #5dd219;
   font-weight: 600;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .hours-separator {
   color: #999;
+}
+
+.remaining-hours {
+  color: #ff0059;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.hours-equals {
+  color: #999;
+  margin: 0 2px;
 }
 
 .target-hours {
@@ -610,7 +803,7 @@ export default {
 }
 
 .weekend-hours {
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
 .weekend-hours .current-hours {
@@ -619,6 +812,10 @@ export default {
 
 .weekend-hours .target-hours {
   color: #999;
+}
+
+.weekend-hours .remaining-hours {
+  color: #28a745;
 }
 
 .day-header.today {
@@ -708,6 +905,12 @@ export default {
   margin-top: 4px;
 }
 
+.item-hours-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .item-hours {
   font-size: 12px;
   color: #1976d2;
@@ -755,8 +958,63 @@ export default {
   color: #666;
 }
 
+.quick-hours-options {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.quick-hours-options .el-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #409EFF;
+  border: 1px solid #d9ecff;
+  background-color: #f0f9ff;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.quick-hours-options .el-button:hover {
+  color: #66b1ff;
+  background-color: #ecf5ff;
+  border-color: #b3d8ff;
+}
+
 .dialog-footer {
   text-align: right;
+}
+
+.link-icon {
+  font-size: 14px;
+  color: #409EFF;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.link-icon:hover {
+  background-color: #ecf5ff;
+  color: #66b1ff;
+  transform: scale(1.1);
+}
+
+/* 链接输入框容器样式 */
+.link-input-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.link-input-container .el-input {
+  flex: 1;
+}
+
+.link-input-container .el-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  height: 38px;
+  padding: 0 15px;
 }
 
 /* 响应式设计 */
@@ -769,6 +1027,33 @@ export default {
   .week-navigation {
     padding: 12px 16px;
     gap: 12px;
+  }
+
+  .week-display {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .week-stats {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .week-hours-summary {
+    font-size: 12px;
+    padding: 3px 6px;
+    gap: 4px;
+  }
+
+  .week-total,
+  .week-target {
+    font-size: 12px;
+  }
+
+  .week-remaining {
+    font-size: 12px;
+    padding: 1px 4px;
+    margin-left: 2px;
   }
 
   .week-grid {
