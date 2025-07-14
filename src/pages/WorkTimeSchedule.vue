@@ -19,6 +19,10 @@
               <span v-if="parseFloat(weekRemainingHours) > 0" class="week-remaining">(还差{{ weekRemainingHours
                 }}h)</span>
             </div>
+            <div class="data-stats" title="已保存的数据周数">
+              <i class="el-icon-folder"></i>
+              <span>{{ getDataStats().totalWeeks }}周</span>
+            </div>
           </div>
         </div>
         <div class="nav-button-container">
@@ -192,6 +196,7 @@ export default {
   mounted() {
     this.initCurrentWeek();
     this.loadData();
+    this.cleanOldData();
   },
   methods: {
     // 初始化当前周
@@ -355,35 +360,87 @@ export default {
     // 保存数据到本地存储
     saveData() {
       const weekKey = this.getWeekKey();
-      const data = {
+      if (!weekKey) return;
+
+      // 获取所有已保存的数据
+      const allData = this.getAllSavedData();
+
+      // 更新或添加当前周的数据
+      allData[weekKey] = {
         weekKey,
         weekDays: this.weekDays
       };
-      localStorage.setItem('workTimeSchedule', JSON.stringify(data));
+
+      // 保存所有数据
+      localStorage.setItem('workTimeSchedule', JSON.stringify(allData));
+
+      // 清理旧数据
+      this.cleanOldData();
     },
 
     // 从本地存储加载数据
     loadData() {
+      const allData = this.getAllSavedData();
+      const currentWeekKey = this.getWeekKey();
+
+      if (currentWeekKey && allData[currentWeekKey]) {
+        this.weekDays = allData[currentWeekKey].weekDays;
+      }
+    },
+
+    // 获取所有已保存的数据
+    getAllSavedData() {
       const savedData = localStorage.getItem('workTimeSchedule');
       if (savedData) {
         try {
           const data = JSON.parse(savedData);
-          const currentWeekKey = this.getWeekKey();
-
-          // 如果是同一周的数据，则加载
-          if (data.weekKey === currentWeekKey) {
-            this.weekDays = data.weekDays;
+          // 如果是旧格式（单个周的数据），转换为新格式
+          if (data.weekKey && data.weekDays) {
+            return { [data.weekKey]: data };
+          }
+          // 如果是新格式（多周数据），直接返回
+          if (typeof data === 'object') {
+            return data;
           }
         } catch (error) {
           console.error('加载数据失败:', error);
         }
       }
+      return {};
     },
 
     // 获取周标识
     getWeekKey() {
-      if (this.weekDays.length === 0) return '';
-      return this.weekDays[0].date;
+      if (!this.currentWeekStart) return '';
+      return this.formatDate(this.currentWeekStart);
+    },
+
+    // 清理旧数据（保留最近12周的数据）
+    cleanOldData() {
+      const allData = this.getAllSavedData();
+      const weekKeys = Object.keys(allData).sort();
+
+      // 如果数据超过12周，删除最旧的数据
+      if (weekKeys.length > 12) {
+        const keysToDelete = weekKeys.slice(0, weekKeys.length - 12);
+        keysToDelete.forEach(key => {
+          delete allData[key];
+        });
+
+        // 保存清理后的数据
+        localStorage.setItem('workTimeSchedule', JSON.stringify(allData));
+        console.log(`已清理 ${ keysToDelete.length } 周的旧数据`);
+      }
+    },
+
+    // 获取数据统计信息
+    getDataStats() {
+      const allData = this.getAllSavedData();
+      const weekKeys = Object.keys(allData);
+      return {
+        totalWeeks: weekKeys.length,
+        savedWeeks: weekKeys.sort()
+      };
     },
 
     // 切换到上一周
@@ -657,6 +714,24 @@ export default {
   padding: 2px 6px;
   border-radius: 4px;
   border: 1px solid #ffebee;
+}
+
+.data-stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  margin-left: 8px;
+}
+
+.data-stats i {
+  font-size: 12px;
+  color: #999;
 }
 
 .nav-button-container {
