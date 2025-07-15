@@ -13,17 +13,17 @@
         @open-link="openLink" />
 
       <!-- 添加/编辑事项对话框 -->
-      <WorkItemDialog :visible="dialogVisible" :isEditing="isEditing" :newItem="newItem" :rules="rules"
-        @close="handleDialogClose" @save="isEditing ? updateWorkItem() : addWorkItem()" @set-quick-hours="setQuickHours"
-        @parse-link="parseLink" />
+      <WorkItemDialog ref="workItemDialog" :visible="dialogVisible" :isEditing="isEditing" :newItem="newItem"
+        :rules="rules" @close="handleDialogClose" @save="isEditing ? updateWorkItem() : addWorkItem()"
+        @set-quick-hours="setQuickHours" @parse-link="parseLink" />
 
       <!-- 数据分布图 -->
       <DataDistribution v-if="getDataStats().totalWeeks > 0" :distributionExpanded="distributionExpanded"
         :dataStats="getDataStats()" :currentWeekKey="getWeekKey()" :getWeekDateRange="getWeekDateRange"
         :getWeekTotalHours="getWeekTotalHours" :getWeekRemainingHours="getWeekRemainingHours"
         :getWeekTargetHours="getWeekTargetHours" :getWeekDays="getWeekDays" :hasWorkOnDay="hasWorkOnDay"
-        :formatDayDate="formatDayDate" @toggle-distribution="toggleDistribution" @clear-all-data="clearAllData"
-        @go-to-week="goToWeek" @delete-week="deleteWeek" />
+        :formatDayDate="formatDayDate" :getWeekNumber="getWeekNumber" @toggle-distribution="toggleDistribution"
+        @clear-all-data="clearAllData" @go-to-week="goToWeek" @delete-week="deleteWeek" />
     </div>
   </PageLayout>
 </template>
@@ -151,8 +151,8 @@ export default {
       this.dialogVisible = true;
       this.resetNewItem();
       this.$nextTick(() => {
-        this.$refs.itemForm && this.$refs.itemForm.clearValidate();
-        this.$refs.titleInput && this.$refs.titleInput.focus();
+        this.$refs.workItemDialog && this.$refs.workItemDialog.$refs.itemForm && this.$refs.workItemDialog.$refs.itemForm.clearValidate();
+        this.$refs.workItemDialog && this.$refs.workItemDialog.$refs.titleInput && this.$refs.workItemDialog.$refs.titleInput.focus();
       });
     },
 
@@ -167,8 +167,8 @@ export default {
         link: item.link || ''
       };
       this.$nextTick(() => {
-        this.$refs.itemForm && this.$refs.itemForm.clearValidate();
-        this.$refs.hoursInput && this.$refs.hoursInput.focus();
+        this.$refs.workItemDialog && this.$refs.workItemDialog.$refs.itemForm && this.$refs.workItemDialog.$refs.itemForm.clearValidate();
+        this.$refs.workItemDialog && this.$refs.workItemDialog.$refs.hoursInput && this.$refs.workItemDialog.$refs.hoursInput.focus();
       });
     },
 
@@ -189,7 +189,7 @@ export default {
     },
 
     addWorkItem() {
-      this.$refs.itemForm.validate((valid) => {
+      this.$refs.workItemDialog.$refs.itemForm.validate((valid) => {
         if (valid) {
           const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
           if (dayIndex !== -1) {
@@ -203,7 +203,7 @@ export default {
     },
 
     updateWorkItem() {
-      this.$refs.itemForm.validate((valid) => {
+      this.$refs.workItemDialog.$refs.itemForm.validate((valid) => {
         if (valid) {
           const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
           if (dayIndex !== -1 && this.currentEditIndex !== -1) {
@@ -248,7 +248,7 @@ export default {
           this.newItem.title = title;
           this.$message.success('已解析链接标题：' + title);
           this.$nextTick(() => {
-            this.$refs.itemForm && this.$refs.itemForm.validateField('title');
+            this.$refs.workItemDialog && this.$refs.workItemDialog.$refs.itemForm && this.$refs.workItemDialog.$refs.itemForm.validateField('title');
           });
         } else {
           this.$message.warning('无法解析链接，请手动输入事项名称');
@@ -340,6 +340,11 @@ export default {
     },
 
     // 数据分布图工具方法
+    getWeekNumber(weekKey) {
+      const date = new Date(weekKey);
+      return dateUtils.getWeekNumber(date);
+    },
+
     getWeekDateRange(weekKey) {
       return workTimeUtils.getWeekDateRange(weekKey);
     },

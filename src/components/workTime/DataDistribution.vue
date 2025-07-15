@@ -5,15 +5,14 @@
         <i :class="distributionExpanded ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" class="expand-icon"></i>
         <h3>已保存的周数据分布 (共{{ dataStats.totalWeeks }}周)</h3>
       </div>
-      <div class="dist-actions" @click="$emit('clear-all-data')">
+      <div class="dist-actions" @click.stop="$emit('clear-all-data')">
         一键清理所有数据
       </div>
     </div>
     <div class="dist-content" v-if="distributionExpanded">
       <div class="week-grid">
-        <div v-for="weekKey in dataStats.savedWeeks" :key="weekKey" class="week-item" :class="{
-          'current': weekKey === currentWeekKey,
-        }" @click="$emit('go-to-week', weekKey)" :title="getWeekTooltip(weekKey)">
+        <div v-for="weekKey in dataStats.savedWeeks" :key="weekKey" class="week-item"
+          @click="$emit('go-to-week', weekKey)" :title="getWeekTooltip(weekKey)">
           <!-- 悬浮操作按钮 -->
           <div class="item-actions">
             <i class="el-icon-location action-btn locate-btn" @click.stop="$emit('go-to-week', weekKey)"
@@ -23,7 +22,10 @@
           </div>
 
           <div class="item-header">
-            <div class="date-range">{{ getWeekDateRange(weekKey) }}</div>
+            <div class="week-info">
+              <div class="week-number">第{{ getWeekNumber(weekKey) }}周</div>
+              <div class="date-range">{{ getWeekDateRange(weekKey) }}</div>
+            </div>
           </div>
           <div class="item-stats">
             <span class="hours">{{ getWeekTotalHours(weekKey) }}h</span>
@@ -90,6 +92,10 @@ export default {
       required: true
     },
     formatDayDate: {
+      type: Function,
+      required: true
+    },
+    getWeekNumber: {
       type: Function,
       required: true
     }
@@ -175,7 +181,7 @@ export default {
   min-height: 120px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   overflow: hidden;
   border: 1px solid transparent;
 }
@@ -236,15 +242,25 @@ export default {
   transform: scale(1.1);
 }
 
-.week-item.current {
-  background: #f0f8ff;
-  border-color: #409EFF;
-}
-
 .item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.week-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.week-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
 .date-range {
@@ -259,10 +275,6 @@ export default {
   align-items: baseline;
   gap: 4px;
   font-size: 12px;
-  background: #fff;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
 }
 
 .hours {
@@ -364,6 +376,11 @@ export default {
     width: 28px;
     height: 28px;
     font-size: 12px;
+  }
+
+  .week-number {
+    font-size: 12px;
+    padding: 3px 6px;
   }
 
   .date-range {
