@@ -191,9 +191,14 @@ export default {
     addWorkItem() {
       this.$refs.workItemDialog.$refs.itemForm.validate((valid) => {
         if (valid) {
+          // 校验云效链接
+          if (!workTimeUtils.isValidYunxiaoLink(this.newItem.link)) {
+            this.newItem.link = '';
+          }
           const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
           if (dayIndex !== -1) {
-            this.weekDays[dayIndex].items.push({ ...this.newItem });
+            // 使用 Vue.set 确保响应式更新
+            this.$set(this.weekDays[dayIndex], 'items', [...this.weekDays[dayIndex].items, { ...this.newItem }]);
             this.saveData();
             this.handleDialogClose();
             this.$message.success('添加成功');
@@ -205,9 +210,14 @@ export default {
     updateWorkItem() {
       this.$refs.workItemDialog.$refs.itemForm.validate((valid) => {
         if (valid) {
+          // 校验云效链接
+          if (!workTimeUtils.isValidYunxiaoLink(this.newItem.link)) {
+            this.newItem.link = '';
+          }
           const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
           if (dayIndex !== -1 && this.currentEditIndex !== -1) {
-            this.weekDays[dayIndex].items[this.currentEditIndex] = { ...this.newItem };
+            // 使用 Vue.set 确保响应式更新
+            this.$set(this.weekDays[dayIndex].items, this.currentEditIndex, { ...this.newItem });
             this.saveData();
             this.handleDialogClose();
             this.$message.success('更新成功');
@@ -219,7 +229,10 @@ export default {
     deleteWorkItem(date, index) {
       const dayIndex = this.weekDays.findIndex(day => day.date === date);
       if (dayIndex !== -1) {
-        this.weekDays[dayIndex].items.splice(index, 1);
+        // 使用 Vue.set 确保响应式更新
+        const newItems = [...this.weekDays[dayIndex].items];
+        newItems.splice(index, 1);
+        this.$set(this.weekDays[dayIndex], 'items', newItems);
         this.saveData();
         this.$message.success('删除成功');
       }
@@ -284,7 +297,8 @@ export default {
       const currentWeekKey = this.getWeekKey();
 
       if (currentWeekKey && allData[currentWeekKey]) {
-        this.weekDays = allData[currentWeekKey].weekDays;
+        // 确保响应式更新
+        this.weekDays = [...allData[currentWeekKey].weekDays];
       }
     },
 

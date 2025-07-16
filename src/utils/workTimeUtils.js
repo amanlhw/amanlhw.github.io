@@ -115,6 +115,31 @@ export function parseYunxiaoLink(link) {
 }
 
 /**
+ * 验证云效链接是否有效
+ * @param {string} link - 云效链接
+ * @returns {boolean} 是否为有效的云效链接
+ */
+export function isValidYunxiaoLink(link) {
+  if (!link || typeof link !== 'string') return false;
+  const url = link.trim();
+  if (!url) return false;
+  try {
+    // 检查是否为有效的URL格式
+    const urlObj = new URL(url);
+    // 检查是否为云效域名
+    const yunxiaoDomains = [
+      'yunxiao.alibaba-inc.com',
+      'yunxiao.aliyun.com',
+      'devops.aliyun.com'
+    ];
+    return yunxiaoDomains.some(domain => urlObj.hostname.includes(domain));
+  } catch (error) {
+    // 如果不是有效的URL格式，返回false
+    return false;
+  }
+}
+
+/**
  * 获取周的日期范围
  * @param {string} weekKey - 周标识
  * @returns {string} 周日期范围字符串
@@ -212,6 +237,7 @@ export const workTimeUtils = {
   calculateWeekTargetHours,
   calculateWeekRemainingHours,
   parseYunxiaoLink,
+  isValidYunxiaoLink,
   getWeekDateRange,
   getWeekTotalHours,
   getWeekTargetHours,
