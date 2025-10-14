@@ -94,7 +94,6 @@ export default {
   mounted() {
     this.initCurrentWeek();
     this.loadData();
-    this.cleanOldData();
   },
   methods: {
     // 初始化相关方法
@@ -289,7 +288,6 @@ export default {
       }
 
       storageUtils.saveAllData(allData);
-      this.cleanOldData();
     },
 
     loadData() {
@@ -300,10 +298,6 @@ export default {
         // 确保响应式更新
         this.weekDays = [...allData[currentWeekKey].weekDays];
       }
-    },
-
-    cleanOldData() {
-      storageUtils.cleanOldData();
     },
 
     getWeekKey() {

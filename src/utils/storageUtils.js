@@ -3,7 +3,6 @@
  */
 
 const STORAGE_KEY = 'workTimeSchedule';
-const MAX_WEEKS = 12; // 保留最近12周的数据
 
 /**
  * 获取所有已保存的数据
@@ -38,26 +37,6 @@ export function saveAllData(allData) {
 }
 
 /**
- * 清理旧数据（保留最近12周的数据）
- */
-export function cleanOldData() {
-  const allData = getAllSavedData();
-  const weekKeys = Object.keys(allData).sort();
-
-  // 如果数据超过12周，删除最旧的数据
-  if (weekKeys.length > MAX_WEEKS) {
-    const keysToDelete = weekKeys.slice(0, weekKeys.length - MAX_WEEKS);
-    keysToDelete.forEach(key => {
-      delete allData[key];
-    });
-
-    // 保存清理后的数据
-    saveAllData(allData);
-    console.log(`已清理 ${ keysToDelete.length } 周的旧数据`);
-  }
-}
-
-/**
  * 删除指定周的数据
  * @param {string} weekKey - 周标识
  */
@@ -78,7 +57,6 @@ export function clearAllData() {
 export const storageUtils = {
   getAllSavedData,
   saveAllData,
-  cleanOldData,
   deleteWeekData,
   clearAllData
 }; 
