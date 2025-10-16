@@ -65,6 +65,14 @@ export default {
         },
         {
           id: 4,
+          type: 'internal',
+          route: '/sudoku',
+          title: '数独游戏',
+          description: '经典数独游戏，锻炼逻辑思维',
+          icon: 'el-icon-s-grid'
+        },
+        {
+          id: 5,
           type: 'external',
           url: 'https://sunzsh.github.io/json/',
           title: 'JSON格式化',
@@ -72,7 +80,7 @@ export default {
           icon: 'el-icon-document'
         },
         {
-          id: 5,
+          id: 6,
           type: 'external',
           url: 'https://tool.lu',
           title: '在线工具集',
@@ -80,7 +88,7 @@ export default {
           icon: 'el-icon-folder'
         },
         {
-          id: 6,
+          id: 7,
           type: 'external',
           url: 'https://www.bejson.com',
           title: 'BeJSON工具',
@@ -88,7 +96,7 @@ export default {
           icon: 'el-icon-edit-outline'
         },
         {
-          id: 7,
+          id: 8,
           type: 'external',
           url: 'https://www.json.cn',
           title: 'JSON格式化',
