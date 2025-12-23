@@ -15,6 +15,8 @@
           <span class="separator">/</span>
           <span class="target">{{ weekTargetHours }}h</span>
           <span v-if="parseFloat(weekRemainingHours) > 0" class="remaining">(还差{{ weekRemainingHours }}h)</span>
+          <el-button type="primary" size="mini" icon="el-icon-document" class="report-btn-inline"
+            @click="$emit('generate-week-report')">生成本周周报</el-button>
         </div>
       </div>
     </div>
@@ -53,7 +55,7 @@ export default {
       default: 0
     }
   },
-  emits: ['previous-week', 'next-week', 'go-to-current-week']
+  emits: ['previous-week', 'next-week', 'go-to-current-week', 'generate-week-report']
 };
 </script>
 
@@ -153,6 +155,12 @@ export default {
   border: 1px solid #ffebee;
 }
 
+.report-btn-inline {
+  margin-left: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
 .nav-btn {
   padding: 8px 16px;
   border-radius: 8px;
@@ -215,6 +223,17 @@ export default {
   .nav-btn .el-button {
     font-size: 14px;
     padding: 0;
+  }
+
+  .hours-summary {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .report-btn-inline {
+    margin-left: 0;
+    margin-top: 4px;
+    width: 100%;
   }
 }
 </style>

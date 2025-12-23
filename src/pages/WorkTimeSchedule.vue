@@ -4,7 +4,8 @@
       <!-- 周导航组件 -->
       <WeekNavigation :currentWeekNumber="currentWeekNumber" :isCurrentWeek="isCurrentWeek" :weekRange="weekRange"
         :weekTotalHours="weekTotalHours" :weekTargetHours="weekTargetHours" :weekRemainingHours="weekRemainingHours"
-        @previous-week="previousWeek" @next-week="nextWeek" @go-to-current-week="goToCurrentWeek" />
+        @previous-week="previousWeek" @next-week="nextWeek" @go-to-current-week="goToCurrentWeek"
+        @generate-week-report="generateWeekReport" />
 
       <!-- 周网格组件 -->
       <WeekGrid :weekDays="weekDays" :isToday="isToday" :isWeekend="isWeekend" :isWorkdayOnWeekend="isWorkdayOnWeekend"
@@ -24,6 +25,19 @@
         :getWeekTargetHours="getWeekTargetHours" :getWeekDays="getWeekDays" :hasWorkOnDay="hasWorkOnDay"
         :formatDayDate="formatDayDate" :getWeekNumber="getWeekNumber" @toggle-distribution="toggleDistribution"
         @clear-all-data="clearAllData" @go-to-week="goToWeek" @delete-week="deleteWeek" />
+
+      <!-- 周报弹窗 -->
+      <el-dialog title="本周周报" :visible.sync="weekReportDialogVisible" width="600px"
+        :before-close="handleWeekReportClose">
+        <div class="week-report-content">
+          <el-input v-model="weekReportContent" type="textarea" :rows="15" placeholder="本周事项列表"
+            class="week-report-textarea"></el-input>
+        </div>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="handleWeekReportClose">关闭</el-button>
+          <el-button type="primary" @click="copyWeekReport" icon="el-icon-document-copy">复制</el-button>
+        </div>
+      </el-dialog>
     </div>
   </PageLayout>
 </template>
@@ -58,6 +72,8 @@ export default {
       currentDay: '',
       currentEditIndex: -1,
       distributionExpanded: false,
+      weekReportDialogVisible: false,
+      weekReportContent: '',
       newItem: {
         title: '',
         hours: 1,
@@ -407,6 +423,94 @@ export default {
 
     getRemainingHours(items, dayName, date) {
       return workTimeUtils.getRemainingHours(items, dayName, date, this.isWeekend, this.isWorkdayOnWeekend);
+    },
+
+    /**
+     * 生成本周周报
+     */
+    generateWeekReport() {
+      // 收集本周所有事项的标题
+      const titles = new Set();
+
+      this.weekDays.forEach(day => {
+        if (day.items && day.items.length > 0) {
+          day.items.forEach(item => {
+            if (item.title) {
+              let title = item.title.trim();
+              // 去掉末尾的"-前端"
+              if (title.endsWith('-前端')) {
+                title = title.slice(0, -3).trim();
+              }
+              // 去重
+              if (title) {
+                titles.add(title);
+              }
+            }
+          });
+        }
+      });
+
+      // 转换为数组并排序
+      const titleArray = Array.from(titles).sort();
+
+      // 生成周报内容，添加序号
+      this.weekReportContent = titleArray.map((title, index) => {
+        return `${ index + 1 }. ${ title }`;
+      }).join('\n');
+      this.weekReportDialogVisible = true;
+    },
+
+    /**
+     * 关闭周报弹窗
+     */
+    handleWeekReportClose() {
+      this.weekReportDialogVisible = false;
+      this.weekReportContent = '';
+    },
+
+    /**
+     * 复制周报内容
+     */
+    copyWeekReport() {
+      if (!this.weekReportContent) {
+        this.$message.warning('周报内容为空');
+        return;
+      }
+
+      // 创建临时文本域
+      const textarea = document.createElement('textarea');
+      textarea.value = this.weekReportContent;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          this.$message.success('已复制到剪贴板');
+        } else {
+          // 如果 execCommand 失败，使用 Clipboard API
+          navigator.clipboard.writeText(this.weekReportContent).then(() => {
+            this.$message.success('已复制到剪贴板');
+          }).catch(() => {
+            this.$message.error('复制失败，请手动复制');
+          });
+        }
+      } catch (err) {
+        // 如果 execCommand 和 Clipboard API 都失败，尝试使用 Clipboard API
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(this.weekReportContent).then(() => {
+            this.$message.success('已复制到剪贴板');
+          }).catch(() => {
+            this.$message.error('复制失败，请手动复制');
+          });
+        } else {
+          this.$message.error('复制失败，请手动复制');
+        }
+      } finally {
+        document.body.removeChild(textarea);
+      }
     }
   }
 };
@@ -418,6 +522,15 @@ export default {
   height: calc(100vh - 150px);
   display: flex;
   flex-direction: column;
+}
+
+.week-report-content {
+  margin-bottom: 16px;
+}
+
+.week-report-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: 14px;
 }
 
 /* 响应式设计 */
