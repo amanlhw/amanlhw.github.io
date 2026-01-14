@@ -81,7 +81,6 @@ export default {
       },
       rules: {
         title: [
-          { required: true, message: '请输入事项名称', trigger: 'blur' },
           { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
         ],
         hours: [
@@ -210,6 +209,29 @@ export default {
           if (!workTimeUtils.isValidYunxiaoLink(this.newItem.link)) {
             this.newItem.link = '';
           }
+
+          // 如果有云效链接，先进行解析
+          if (this.newItem.link && workTimeUtils.isValidYunxiaoLink(this.newItem.link)) {
+            try {
+              const parsedTitle = workTimeUtils.parseYunxiaoLink(this.newItem.link);
+              if (parsedTitle) {
+                // 如果标题为空，使用解析的标题
+                if (!this.newItem.title.trim()) {
+                  this.newItem.title = parsedTitle;
+                }
+              }
+            } catch (error) {
+              // 解析失败不影响保存
+              console.warn('解析云效链接失败:', error);
+            }
+          }
+
+          // 判断事项名称是否有值
+          if (!this.newItem.title || !this.newItem.title.trim()) {
+            this.$message.error('保存失败，请填写事项名称');
+            return;
+          }
+
           const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
           if (dayIndex !== -1) {
             // 使用 Vue.set 确保响应式更新
@@ -229,6 +251,29 @@ export default {
           if (!workTimeUtils.isValidYunxiaoLink(this.newItem.link)) {
             this.newItem.link = '';
           }
+
+          // 如果有云效链接，先进行解析
+          if (this.newItem.link && workTimeUtils.isValidYunxiaoLink(this.newItem.link)) {
+            try {
+              const parsedTitle = workTimeUtils.parseYunxiaoLink(this.newItem.link);
+              if (parsedTitle) {
+                // 如果标题为空，使用解析的标题
+                if (!this.newItem.title.trim()) {
+                  this.newItem.title = parsedTitle;
+                }
+              }
+            } catch (error) {
+              // 解析失败不影响保存
+              console.warn('解析云效链接失败:', error);
+            }
+          }
+
+          // 判断事项名称是否有值
+          if (!this.newItem.title || !this.newItem.title.trim()) {
+            this.$message.error('保存失败，请填写事项名称');
+            return;
+          }
+
           const dayIndex = this.weekDays.findIndex(day => day.date === this.currentDay);
           if (dayIndex !== -1 && this.currentEditIndex !== -1) {
             // 使用 Vue.set 确保响应式更新
