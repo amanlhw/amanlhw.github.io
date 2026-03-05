@@ -19,24 +19,14 @@
           </el-form-item>
 
           <el-form-item label="车牌号码">
-            <el-input
-              v-model="plateNumber"
-              :placeholder="plateType === 'green' ? '8位新能源，如：京AD12345、京AF12345' : '7位车牌，如：京A12345、沪A0023领'"
-              clearable
-              maxlength="8"
-              show-word-limit
-              @keyup.enter.native="generatePlate"
-            />
+            <el-input v-model="plateNumber"
+              :placeholder="plateType === 'green' ? '8位新能源，如：京AD12345、京AF12345' : '7位车牌，如：京A12345、沪A0023领'" clearable
+              maxlength="8" show-word-limit @keyup.enter.native="generatePlate" />
           </el-form-item>
 
           <el-form-item>
-            <el-button
-              type="primary"
-              size="medium"
-              icon="el-icon-picture"
-              :disabled="!normalizedPlate"
-              @click="generatePlate"
-            >
+            <el-button type="primary" size="medium" icon="el-icon-picture" :disabled="!normalizedPlate"
+              @click="generatePlate">
               生成图片
             </el-button>
           </el-form-item>
@@ -56,18 +46,9 @@
         </div>
 
         <div class="canvas-container">
-          <canvas
-            ref="plateCanvas"
-            :width="canvasWidth"
-            :height="canvasHeight"
-          />
-          <el-button
-            type="success"
-            size="medium"
-            icon="el-icon-download"
-            :disabled="!normalizedPlate"
-            @click="downloadPlate"
-          >
+          <canvas ref="plateCanvas" :width="canvasWidth" :height="canvasHeight" />
+          <el-button type="success" size="medium" icon="el-icon-download" :disabled="!normalizedPlate"
+            @click="downloadPlate">
             下载PNG图片
           </el-button>
         </div>
@@ -111,10 +92,22 @@ const PLATE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
 const SPRITE_CELL_W = 90;
 const SPRITE_CELL_H = 180;
 
-/** 五种底色的样式 */
+/**
+ * 五种车牌的背景色值（依据 GA36 机动车号牌标准）
+ * - 蓝牌：蓝底白字 #001B7A
+ * - 绿牌（新能源）：渐变绿底黑字，从上到下 黄绿→深绿
+ * - 黑牌：黑底白字 #000000
+ * - 黄牌：黄底黑字 #FFBE00
+ * - 白牌：白底黑字 #FFFFFF
+ */
 const PLATE_STYLES = {
   blue: { bg: '#001B7A', text: '#fff', border: '#fff', dot: '#fff' },
-  green: { bg: '#008000', text: '#000', border: '#000', dot: '#000' }, // GA36-2018 小型新能源绿牌标准色
+  green: {
+    gradient: { from: '#9ED054', to: '#288C46' },
+    text: '#000',
+    border: '#000',
+    dot: '#000'
+  },
   black: { bg: '#000000', text: '#fff', border: '#fff', dot: '#fff' },
   yellow: { bg: '#FFBE00', text: '#000', border: '#000', dot: '#000' },
   white: { bg: '#FFFFFF', text: '#000', border: '#000', dot: '#000' }
@@ -239,10 +232,10 @@ export default {
     loadSprites() {
       const base = process.env.BASE_URL || '/';
       const urls = [
-        { key: 'letterImg', url: `${base}plate/letter.png` },
-        { key: 'wordImg', url: `${base}plate/word.png` },
-        { key: 'letter2Img', url: `${base}plate/letter2.png` },
-        { key: 'word2Img', url: `${base}plate/word2.png` }
+        { key: 'letterImg', url: `${ base }plate/letter.png` },
+        { key: 'wordImg', url: `${ base }plate/word.png` },
+        { key: 'letter2Img', url: `${ base }plate/letter2.png` },
+        { key: 'word2Img', url: `${ base }plate/word2.png` }
       ];
       let loaded = 0;
       urls.forEach(({ key, url }) => {
@@ -342,7 +335,7 @@ export default {
       const isLightBg = style.text === '#000';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `bold ${fontSize}px "Microsoft YaHei", "黑体", sans-serif`;
+      ctx.font = `bold ${ fontSize }px "Microsoft YaHei", "黑体", sans-serif`;
       const offset = 1.5;
       if (isLightBg) {
         ctx.fillStyle = '#333';
@@ -371,8 +364,15 @@ export default {
 
       ctx.clearRect(0, 0, w, h);
 
-      // 背景
-      ctx.fillStyle = style.bg;
+      // 背景：新能源绿牌为渐变色（从上到下 黄绿→深绿），其余为纯色
+      if (style.gradient) {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, style.gradient.from);
+        g.addColorStop(1, style.gradient.to);
+        ctx.fillStyle = g;
+      } else {
+        ctx.fillStyle = style.bg;
+      }
       this.roundRect(ctx, 0, 0, w, h, SIGN_RADIUS);
       ctx.fill();
 
@@ -412,7 +412,7 @@ export default {
       const canvas = this.$refs.plateCanvas;
       const name = this.normalizedPlate || '京A88888';
       const link = document.createElement('a');
-      link.download = `车牌号_${name}.png`;
+      link.download = `车牌号_${ name }.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     }
